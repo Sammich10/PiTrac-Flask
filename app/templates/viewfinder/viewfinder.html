@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PiTrac Viewfinder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/viewfinder.css') }}">
+</head>
+<body>
+    <h1 style="text-align:center;">PiTrac Camera Viewfinder</h1>
+    <div class="viewfinder-container">
+        <div class="camera-stream">
+            <div class="camera-title">Camera 0</div>
+            <img id="cam0" src="/viewfinder/stream/0" alt="Camera 0">
+        </div>
+        <div class="camera-stream">
+            <div class="camera-title">Camera 1</div>
+            <img id="cam1" src="/viewfinder/stream/1" alt="Camera 1">
+        </div>
+    </div>
+    <script>
+    </script>
+</body>
+</html>
