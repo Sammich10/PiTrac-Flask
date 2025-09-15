@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pi Mode Control</title>
+</head>
+<body>
+    <h1>Change Pi Mode</h1>
+    <!--Dropdown for mode selection-->
+    <select id="modeSelect">
+        <option value="standby">Standby</option>
+        <option value="viewfinder">Viewfinder</option>
+        <option value="calibration">Calibration</option>
+        <option value="launch_monitor">Launch Monitor</option>
+        <option value="diagnostics">Diagnostics</option>
+    </select>
+    <button onclick="changeMode()">Change Mode</button>
+    <p id="result"></p>
+    <script>
+        function changeMode() {
+            const selectedMode = document.getElementById("modeSelect").value;
+            fetch('/api/change_mode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mode: selectedMode })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').innerText = data.message;
+                });
+        }
+    </script>
+</body>
+</html>

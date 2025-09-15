@@ -18,6 +18,9 @@
         </div>
     </div>
     <script>
+        window.addEventListener('beforeunload', function () {
+            fetch('/viewfinder/stop_stream', { method: 'POST' });
+        });
     </script>
 </body>
 </html>
