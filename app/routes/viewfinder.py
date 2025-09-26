@@ -7,7 +7,7 @@ import numpy as np
 import time
 import os
 
-from app.routes.messages.Frame import zmq_receiver, latest_images, stop_event
+from app.routes.stream.viewfinder import zmq_receiver, latest_images, stop_event
 from app.routes.messages.Common import PI_IP
 
 bp = Blueprint('viewfinder', __name__, url_prefix='/viewfinder')
@@ -18,17 +18,21 @@ stream_2_receiver_thread = threading.Thread(target=zmq_receiver, args=(1, f"tcp:
 # For now redirect to viewfinder
 @bp.route("/")
 def viewfinder():
-    if not stream_1_receiver_thread.is_alive():
-         stream_1_receiver_thread.start()
-    if not stream_2_receiver_thread.is_alive():
-         stream_2_receiver_thread.start()
-    return render_template("viewfinder/viewfinder.html")
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        if not stream_1_receiver_thread.is_alive():
+            stream_1_receiver_thread.start()
+        if not stream_2_receiver_thread.is_alive():
+            stream_2_receiver_thread.start()
+        return render_template("viewfinder/viewfinder.html")
 
 @bp.route("/stream/<int:cam_index>")
 def stream(cam_index):
     def generate():
         while True:
             if latest_images[cam_index] is not None:
+                if cam_index == 0:
+                    # Flip stream 1 vertically
+                    latest_images[cam_index] = cv2.flip(latest_images[cam_index], 0)
                 ret, jpeg = cv2.imencode('.jpg', latest_images[cam_index])
                 if ret:
                     yield (b'--frame\r\n'
@@ -46,6 +50,13 @@ def stream(cam_index):
 @bp.route("/stop_stream", methods=["POST"])
 def stop_stream():
     stop_event.set()
+    latest_images[0] = None
+    latest_images[1] = None
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        if stream_1_receiver_thread.is_alive():
+            stream_1_receiver_thread.join()
+        if stream_2_receiver_thread.is_alive():
+            stream_2_receiver_thread.join()
     return '', 204
 
 # Start ZMQ receiver threads for each camera
