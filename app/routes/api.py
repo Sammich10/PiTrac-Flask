@@ -1,10 +1,12 @@
 from flask import(
     Blueprint, Flask, render_template, Response, request, jsonify, redirect, url_for, session
 )
-from app.routes.messages.SystemCommand import (
-    SystemCommandMsg, CommandID, SystemMode, StartPayload, StopPayload, ModeChangePayload
+from app.messages.message_types import MessageType
+from app.messages.external import (
+    SystemCommandMsg
 )
-from app.routes.messages.Ack import AckMessage, Status
+from app.messages.common import AckMessage
+from app import SystemMode
 from app.routes.messages.Common import PI_IP, ZMQ_CONTEXT
 import zmq
 
@@ -22,12 +24,12 @@ def change_mode():
         new_mode = SystemMode.CALIBRATION
     elif new_mode == "launch_monitor":
         new_mode = SystemMode.LAUNCH_MONITOR
-    elif new_mode == "diagnostics":
-        new_mode = SystemMode.DIAGNOSTICS
+    elif new_mode == "diagnostic":
+        new_mode = SystemMode.DIAGNOSTIC
     else:
         return jsonify({"error": "Invalid mode"}), 400
     # Create and send mode change message
-    cmd = SystemCommandMsg(CommandID.CHANGE_MODE, ModeChangePayload(new_mode))
+    cmd = SystemCommandMsg(MessageType.ChangeMode, {"mode": new_mode})
     msg = cmd.serialize()
     if msg is None:
         return jsonify({"error": "Invalid mode"}), 400
