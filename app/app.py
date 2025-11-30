@@ -1,10 +1,3 @@
 from enum import IntEnum
+import json
 
-class SystemMode(IntEnum):
-    STARTING_UP = 0
-    STANDBY = 2
-    VIEWFINDER = 3
-    CALIBRATION = 4
-    LAUNCH_MONITOR = 5
-    DIAGNOSTIC = 6
-    MAX_MODE = 7

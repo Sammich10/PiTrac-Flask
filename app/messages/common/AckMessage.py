@@ -60,15 +60,7 @@ class AckMessage(MessageBase):
     
     original_message_type: int = 0  # Type of the original message being acknowledged
     
-    original_message_data: bytes = b''  # Serialized data of the original message
-    
     original_timestamp: int = 0  # Timestamp of the original message in microseconds since epoch
-    
-    ack_timestamp: int = 0  # Timestamp when acknowledgment was created
-    
-    error_message: str = ""  # Error description if status is Failure or Invalid
-    
-    metadata: Dict[str, str] = field(default_factory=dict)  # Additional acknowledgment metadata
     
     
     def __post_init__(self):
@@ -87,37 +79,21 @@ class AckMessage(MessageBase):
             
             self.original_message_type,
             
-            self.original_message_data,
-            
             self.original_timestamp,
-            
-            self.ack_timestamp,
-            
-            self.error_message,
-            
-            self.metadata,
             
         ]
     
     def _set_fields_data(self, fields_data: List[Any]) -> None:
         """Set field values from list during deserialization"""
-        if len(fields_data) != 7:
-            raise ValueError(f"Expected 7 fields, got {len(fields_data)}")
+        if len(fields_data) != 3:
+            raise ValueError(f"Expected 3 fields, got {len(fields_data)}")
         
         
         self.ack_status = fields_data[0]
         
         self.original_message_type = fields_data[1]
         
-        self.original_message_data = fields_data[2]
-        
-        self.original_timestamp = fields_data[3]
-        
-        self.ack_timestamp = fields_data[4]
-        
-        self.error_message = fields_data[5]
-        
-        self.metadata = fields_data[6]
+        self.original_timestamp = fields_data[2]
         
     
     @classmethod
@@ -135,33 +111,9 @@ class AckMessage(MessageBase):
             kwargs['original_message_type'] = data['original_message_type']
             
         
-        if 'original_message_data' in data:
-            
-            # Handle binary data
-            if isinstance(data['original_message_data'], str):
-                kwargs['original_message_data'] = data['original_message_data'].encode('utf-8')
-            else:
-                kwargs['original_message_data'] = data['original_message_data']
-            
-        
         if 'original_timestamp' in data:
             
             kwargs['original_timestamp'] = data['original_timestamp']
-            
-        
-        if 'ack_timestamp' in data:
-            
-            kwargs['ack_timestamp'] = data['ack_timestamp']
-            
-        
-        if 'error_message' in data:
-            
-            kwargs['error_message'] = data['error_message']
-            
-        
-        if 'metadata' in data:
-            
-            kwargs['metadata'] = data['metadata']
             
         
         return cls(**kwargs)
@@ -179,28 +131,7 @@ class AckMessage(MessageBase):
         
         
         
-        # Handle binary data
-        if isinstance(self.original_message_data, bytes):
-            import base64
-            result['original_message_data'] = base64.b64encode(self.original_message_data).decode('utf-8')
-        else:
-            result['original_message_data'] = self.original_message_data
-        
-        
-        
         result['original_timestamp'] = self.original_timestamp
-        
-        
-        
-        result['ack_timestamp'] = self.ack_timestamp
-        
-        
-        
-        result['error_message'] = self.error_message
-        
-        
-        
-        result['metadata'] = self.metadata
         
         
         return result
@@ -225,15 +156,6 @@ class AckMessage(MessageBase):
         self.original_message_type = value
     
     
-    def get_original_message_data(self) -> bytes:
-        """Get original_message_data"""
-        return self.original_message_data
-    
-    def set_original_message_data(self, value: bytes) -> None:
-        """Set original_message_data"""
-        self.original_message_data = value
-    
-    
     def get_original_timestamp(self) -> int:
         """Get original_timestamp"""
         return self.original_timestamp
@@ -241,33 +163,6 @@ class AckMessage(MessageBase):
     def set_original_timestamp(self, value: int) -> None:
         """Set original_timestamp"""
         self.original_timestamp = value
-    
-    
-    def get_ack_timestamp(self) -> int:
-        """Get ack_timestamp"""
-        return self.ack_timestamp
-    
-    def set_ack_timestamp(self, value: int) -> None:
-        """Set ack_timestamp"""
-        self.ack_timestamp = value
-    
-    
-    def get_error_message(self) -> str:
-        """Get error_message"""
-        return self.error_message
-    
-    def set_error_message(self, value: str) -> None:
-        """Set error_message"""
-        self.error_message = value
-    
-    
-    def get_metadata(self) -> Dict[str, str]:
-        """Get metadata"""
-        return self.metadata
-    
-    def set_metadata(self, value: Dict[str, str]) -> None:
-        """Set metadata"""
-        self.metadata = value
     
     
     

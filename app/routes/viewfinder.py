@@ -1,64 +1,70 @@
-from flask import(
-    Blueprint, Flask, render_template, Response, request, jsonify, redirect, url_for, session
+from flask import (
+    Blueprint, Flask, render_template, Response, request, jsonify, 
+    redirect, url_for, session, current_app
 )
-import threading
 import cv2
 import numpy as np
+import base64
 import time
-import os
-
-from app.routes.stream.viewfinder import zmq_receiver, latest_images, stop_event
-from app.routes.messages.Common import PI_IP
 
 bp = Blueprint('viewfinder', __name__, url_prefix='/viewfinder')
 
-stream_1_receiver_thread = threading.Thread(target=zmq_receiver, args=(0, f"tcp://{PI_IP}:5555"), daemon=False)
-stream_2_receiver_thread = threading.Thread(target=zmq_receiver, args=(1, f"tcp://{PI_IP}:5556"), daemon=False)
 
-# For now redirect to viewfinder
+def get_pitrac():
+    """Helper to get PiTrac connection from current app"""
+    return current_app.pitrac_connection
+
+
 @bp.route("/")
 def viewfinder():
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        if not stream_1_receiver_thread.is_alive():
-            stream_1_receiver_thread.start()
-        if not stream_2_receiver_thread.is_alive():
-            stream_2_receiver_thread.start()
-        return render_template("viewfinder/viewfinder.html")
+    """Render viewfinder page"""
+    return render_template("viewfinder/viewfinder.html")
 
-@bp.route("/stream/<int:cam_index>")
-def stream(cam_index):
-    def generate():
-        while True:
-            if latest_images[cam_index] is not None:
-                if cam_index == 0:
-                    # Flip stream 1 vertically
-                    latest_images[cam_index] = cv2.flip(latest_images[cam_index], 0)
-                ret, jpeg = cv2.imencode('.jpg', latest_images[cam_index])
-                if ret:
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
-            else:
-                # If no image yet, send a blank frame or wait
-                blank_image = np.zeros((480, 640, 3), dtype=np.uint8)
-                ret, jpeg = cv2.imencode('.jpg', blank_image)
-                if ret:
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
-            time.sleep(0.1)  # Adjust frame rate as needed
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@bp.route("/frame/latest", methods=["GET"])
+def get_latest_frame():
+    """Get latest camera frame as JSON (placeholder)"""
+    # Note: The simple PiTracConnection doesn't have frame buffering
+    # You would need to implement frame receiving separately
+    # or use the full PiTracManager with FrameProcessor
     
+    return jsonify({
+        'success': False,
+        'error': 'Frame receiving not implemented in simple connection',
+        'hint': 'Use PiTracManager with FrameProcessor for frame handling'
+    }), 501
+
+
+@bp.route("/frame/data_url", methods=["GET"])
+def get_frame_data_url():
+    """Get latest frame as data URL (placeholder)"""
+    return jsonify({
+        'success': False,
+        'error': 'Frame receiving not implemented in simple connection',
+        'hint': 'Use PiTracManager with FrameProcessor for frame handling'
+    }), 501
+
+
+@bp.route("/stream/<camera_id>")
+def stream(camera_id):
+    """
+    Stream camera frames (placeholder)
+    
+    Note: The simple PiTracConnection uses REQ/REP pattern which is synchronous.
+    For streaming frames, you need:
+    1. PiTrac to send frames via SUB/PUB or PUSH/PULL
+    2. Use the full PiTracManager with FrameProcessor
+    """
+    return jsonify({
+        'error': 'Streaming not implemented in simple connection',
+        'hint': 'Use PiTracManager with FrameProcessor for frame streaming'
+    }), 501
+
+
 @bp.route("/stop_stream", methods=["POST"])
 def stop_stream():
-    stop_event.set()
-    latest_images[0] = None
-    latest_images[1] = None
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        if stream_1_receiver_thread.is_alive():
-            stream_1_receiver_thread.join()
-        if stream_2_receiver_thread.is_alive():
-            stream_2_receiver_thread.join()
+    """Stop streaming (placeholder for compatibility)"""
+    # With the new architecture, streams are stateless
+    # Each request gets the latest frame
     return '', 204
 
-# Start ZMQ receiver threads for each camera
-
-# Replace <PI_IP> with your Pi's IP address in the above URLs

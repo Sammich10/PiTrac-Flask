@@ -17,7 +17,7 @@ import msgpack
 import json
 import logging
 import time
-from enum import IntEnum
+from app.messages.message_types import MessageType
 
 class SocketType(IntEnum):
     """ZMQ Socket types matching C++ SocketType"""
