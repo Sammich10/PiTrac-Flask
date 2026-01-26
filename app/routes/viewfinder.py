@@ -21,6 +21,12 @@ def viewfinder():
     return render_template("viewfinder/viewfinder.html")
 
 
+@bp.route("/debug")
+def debug_stream():
+    """Render debug stream page"""
+    return render_template("debug_stream.html")
+
+
 @bp.route("/frame/latest", methods=["GET"])
 def get_latest_frame():
     """Get latest camera frame as JSON (placeholder)"""

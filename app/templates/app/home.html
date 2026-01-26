@@ -1,35 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Pi Mode Control</title>
+    <title>PiTrac Web UI</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/static/styles/home.css">
 </head>
 <body>
-    <h1>Change Pi Mode</h1>
-    <!--Dropdown for mode selection-->
-    <select id="modeSelect">
-        <option value="standby">Standby</option>
-        <option value="viewfinder">Viewfinder</option>
-        <option value="calibration">Calibration</option>
-        <option value="launch_monitor">Launch Monitor</option>
-        <option value="diagnostics">Diagnostics</option>
-    </select>
-    <button onclick="changeMode()">Change Mode</button>
-    <p id="result"></p>
-    <script>
-        function changeMode() {
-            const selectedMode = document.getElementById("modeSelect").value;
-            fetch('/api/change_mode', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ mode: selectedMode })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('result').innerText = data.message;
-                });
-        }
-    </script>
+    <!-- Navbar -->
+    <div id="navbar-container">    
+        <nav id="navbar">
+            <a href="/">Home</a> |
+            <a href="/settings">Settings</a> | 
+            <a href="/about">About</a>
+        </nav>
+    </div>
+    <!-- Control Panel for connecting, changing Pi Mode, etc -->
+    <div id="control-panel-container" class="panel-section">
+        <h1 class="panel-title">PiTrac Control Panel</h1>
+        <div id="control-panel" class="panel-content">
+            <!--Connect Button-->
+            <div id="connect-container" class="panel-section">
+                <h1>Connect to PiTrac</h1>
+                <button onclick="connectPiTrac()">Connect to PiTrac</button>
+                <p id="connectResult"></p>
+            </div>
+            <!--Dropdown for mode selection-->
+            <div id="mode-control-container" class="panel-section">
+                <h1>Change PiTrac Mode</h1>
+                <select id="modeSelect">
+                    <option value="standby">Standby</option>
+                    <option value="viewfinder">Viewfinder</option>
+                    <option value="calibration">Calibration</option>
+                    <option value="launch_monitor">Launch Monitor</option>
+                    <option value="diagnostics">Diagnostics</option>
+                </select>
+                <button onclick="changeMode()">Change Mode</button>
+                <p id="result"></p>
+            </div>
+            <div id="status-container" class="panel-section">
+                <h1>PiTrac Status</h1>
+                <button onclick="getStatus()">Get Status</button>
+                <pre id="statusResult"></pre>
+            </div>
+        </div>
+    </div>
+    <!-- Viewfinder/Calibration Panel -->
+    <div id="viewfinder-panel" class="panel-section expandable-panel collapsed">
+        <div class="panel-header" onclick="toggleViewfinderPanel()">
+            <h1>Viewfinder/Calibration</h1>
+            <span class="expand-arrow">▼</span>
+        </div>
+        <div class="panel-content">
+            <div class="camera-container">
+                <img id="display_1" class="display" src="" alt="PiTrac Display 1">
+                <img id="display_2" class="display" src="" alt="PiTrac Display 2">
+            </div>
+        </div>
+        <h2 id="streamStatus">Stream disconnected</h2>
+    </div>
+    <!-- Launch Monitor Panel -->
+    <div id="launch-monitor-panel" class="panel-section">
+        <h1>Launch Monitor Data</h1>
+        <button onclick="getLaunchData()">Get Launch Data</button>
+        <pre id="launchDataResult"></pre>
+    </div>
+    <script src="/static/js/api.js"></script>
 </body>
 </html>

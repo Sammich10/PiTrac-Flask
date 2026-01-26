@@ -14,6 +14,19 @@ def get_pitrac():
     return current_app.pitrac_connection
 
 
+@bp.route("/connect", methods=["POST"])
+def connect():
+    """Connect to PiTrac"""
+    pitrac = get_pitrac()
+    if pitrac.is_connected():
+        pitrac.disconnect()
+    connected = pitrac.connect()
+    stream_connected = pitrac.connectStream()
+    if connected and stream_connected:
+        return jsonify({"success": True, "message": "Connected to PiTrac"})
+    else:
+        return jsonify({"success": False, "message": "Failed to connect to PiTrac. Control: " + str(connected) + ", Stream: " + str(stream_connected)}), 500
+
 @bp.route("/status", methods=["GET"])
 def get_status():
     """Get PiTrac connection status"""

@@ -25,13 +25,16 @@ class PiTracConnection:
         self._config = config or {}
         self.hostname = self._config.get('hostname') or self._config.get('IP', 'localhost')
         self.port = self._config.get('port', 8080)
+        self.stream_port = self._config.get('stream_port', 8081)
         
         # ZMQ context and socket
         self.context: Optional[zmq.Context] = None
         self.socket: Optional[zmq.Socket] = None
+        self.framesocket : Optional[zmq.Socket] = None
         
         # Connection state
         self._connected = False
+        self._stream_connected = False
         
         # Timeout settings (milliseconds)
         self.send_timeout = 5000  # 5 seconds
@@ -67,6 +70,55 @@ class PiTracConnection:
             self._logger.error(f"Failed to connect to PiTrac: {e}")
             self._cleanup()
             return False
+        
+    def connectStream(self) -> bool:
+        """Establish frame stream connection to PiTrac"""
+        if not self._connected:
+            if not self.connect():
+                return False
+        
+        if self.framesocket:
+            self._logger.warning("Already connected to frame stream")
+            return True
+        
+        self._logger.info("Connecting to PiTrac frame stream")
+        
+        try:
+            self.framesocket = self.context.socket(zmq.SUB)
+            endpoint = f"tcp://*:{self.port+1}"
+            self.framesocket.bind(endpoint)
+            self.framesocket.setsockopt_string(zmq.SUBSCRIBE, "")
+            
+        except Exception as e:
+            self._logger.error(f"Failed to connect to PiTrac frame stream: {e}")
+            self._cleanup()
+            return False
+        
+        self._logger.info(f"Connecting to PiTrac frame stream at {self.hostname}:{self.stream_port}")
+        
+        try:
+            # Create ZMQ context and REQ socket
+            self.context = zmq.Context()
+            self.framesocket = self.context.socket(zmq.SUB)
+            
+            # Set timeouts
+            self.framesocket.setsockopt(zmq.SNDTIMEO, self.send_timeout)
+            self.framesocket.setsockopt(zmq.RCVTIMEO, self.recv_timeout)
+            self.framesocket.setsockopt(zmq.LINGER, 0)
+            self.framesocket.setsockopt_string(zmq.SUBSCRIBE, "")
+            
+            # Connect to PiTrac
+            endpoint = f"tcp://{self.hostname}:{self.stream_port}"
+            self.framesocket.connect(endpoint)
+            
+            self._stream_connected = True
+            self._logger.info(f"Successfully connected to PiTrac frame stream at {endpoint}")
+            return True
+            
+        except Exception as e:
+            self._logger.error(f"Failed to connect to PiTrac frame stream: {e}")
+            self._cleanup()
+            return False
     
     def disconnect(self) -> None:
         """Disconnect from PiTrac"""
@@ -76,6 +128,7 @@ class PiTracConnection:
         self._logger.info("Disconnecting from PiTrac")
         self._cleanup()
         self._connected = False
+        self._stream_connected = False
         self._logger.info("Disconnected from PiTrac")
     
     def _cleanup(self) -> None:
@@ -86,6 +139,15 @@ class PiTracConnection:
             except Exception as e:
                 self._logger.error(f"Error closing socket: {e}")
             self.socket = None
+            self._connected = False
+            
+        if self.framesocket:
+            try:
+                self.framesocket.close()
+            except Exception as e:
+                self._logger.error(f"Error closing frame socket: {e}")
+            self.framesocket = None
+            self._stream_connected = False
         
         if self.context:
             try:

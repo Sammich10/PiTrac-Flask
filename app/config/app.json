@@ -1,21 +1,16 @@
 {
     "Network": {
         "PiTrac": {
-            "hostname": "192.168.100.212",
-            "IP": "192.168.100.212",
+            "hostname": "pitrac-pi",
+            "IP": "192.168.86.22",
             "port": 6000,
+            "stream_port": 6001,
             "UseSSL": false
         },
         "Flask": {
             "Hostname": "localhost",
             "Port": 5000,
             "Debug": true
-        },
-        "Stream":
-        {
-            "hostname": "pitrac-pi",
-            "IP": "192.168.1.100",
-            "port": 8081
         }
     }
 }
