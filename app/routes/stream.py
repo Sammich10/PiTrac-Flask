@@ -10,6 +10,7 @@ import time
 import zmq
 import threading
 import queue
+import json
 from collections import defaultdict
 from ..messages.external.CameraFrameMsg import CameraFrameMsg
 
@@ -26,10 +27,14 @@ class FrameDistributor:
         self.running = False
         self.thread = None
         
-        # Camera-specific frame queues for clients
-        # Structure: {camera_id: [queue1, queue2, ...]}
-        self.client_queues = defaultdict(list)
+        # Camera-specific latest frames for clients
+        # Structure: {camera_id: {"frame_data": bytes, "metadata": dict}}
+        self.latest_frames = {}
         self.lock = threading.Lock()
+        
+        # SSE clients for real-time updates
+        # Structure: {camera_id: [callback1, callback2, ...]}
+        self.sse_clients = defaultdict(list)
         
     def start(self):
         """Start the frame receiver thread"""
@@ -45,25 +50,29 @@ class FrameDistributor:
         if self.thread:
             self.thread.join(timeout=1)
     
-    def subscribe_camera(self, camera_id, max_queue_size=5):
+    def subscribe_camera(self, camera_id, callback=None):
         """Subscribe to frames from a specific camera"""
-        client_queue = queue.Queue(maxsize=max_queue_size)
-        
-        with self.lock:
-            self.client_queues[camera_id].append(client_queue)
-        
-        return client_queue
+        if callback:
+            with self.lock:
+                self.sse_clients[camera_id].append(callback)
+        return True
     
-    def unsubscribe_camera(self, camera_id, client_queue):
+    def unsubscribe_camera(self, camera_id, callback=None):
         """Unsubscribe from camera frames"""
+        if callback:
+            with self.lock:
+                if camera_id in self.sse_clients:
+                    try:
+                        self.sse_clients[camera_id].remove(callback)
+                        if not self.sse_clients[camera_id]:
+                            del self.sse_clients[camera_id]
+                    except ValueError:
+                        pass
+    
+    def get_latest_frame(self, camera_id):
+        """Get the latest frame for a camera"""
         with self.lock:
-            if camera_id in self.client_queues:
-                try:
-                    self.client_queues[camera_id].remove(client_queue)
-                    if not self.client_queues[camera_id]:
-                        del self.client_queues[camera_id]
-                except ValueError:
-                    pass
+            return self.latest_frames.get(camera_id)
     
     def _receive_frames(self):
         """Background thread that receives and distributes frames"""
@@ -76,6 +85,7 @@ class FrameDistributor:
                 # Non-blocking receive
                 if self.pitrac.framesocket.poll(100):
                     data = self.pitrac.framesocket.recv(zmq.NOBLOCK)
+                    print("Frame received of size:", len(data))
                     
                     # Deserialize frame
                     try:
@@ -83,10 +93,11 @@ class FrameDistributor:
                         frame_msg.deserialize(data)
                         
                         # Process frame into bytes
-                        frame_bytes = self._process_frame(frame_msg)
-                        if frame_bytes:
+                        # frame_bytes = self._process_frame(frame_msg)
+                        frame_data = self._extract_frame_data(frame_msg)
+                        if frame_data is not None:
                             # Distribute to subscribers
-                            self._distribute_frame(frame_msg.camera_id, frame_bytes)
+                            self._distribute_frame(frame_msg.camera_id, frame_data)
                             
                     except Exception as e:
                         print(f"Frame processing error: {e}")
@@ -123,21 +134,59 @@ class FrameDistributor:
             print(f"Frame processing error: {e}")
             return None
     
-    def _distribute_frame(self, camera_id, frame_bytes):
+    def _extract_frame_data(self, frame_msg):
+        """Extract raw frame data and metadata"""
+        try:
+            if not isinstance(frame_msg, CameraFrameMsg):
+                raise ValueError("Invalid frame data type")
+            
+            # Process image data to ensure it's streamable
+            image_data = frame_msg.image_data
+            if isinstance(image_data, bytes) and len(image_data) > 0:
+                # Check if it's already JPEG
+                if image_data[:2] != b'\xff\xd8':
+                    # Try to decode and re-encode as JPEG
+                    try:
+                        nparr = np.frombuffer(image_data, np.uint8)
+                        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                        if frame is not None:
+                            _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                            image_data = buffer.tobytes()
+                    except:
+                        return None
+                
+                frame_data = {
+                    "image_data": image_data,
+                    "metadata": {
+                        "camera_id": frame_msg.camera_id,
+                        "frame_number": frame_msg.frame_number,
+                        "timestamp": frame_msg.capture_timestamp,
+                        "fps": frame_msg.fps
+                    }
+                }
+                return frame_data
+            
+            return None
+            
+        except Exception as e:
+            print(f"Frame data extraction error: {e}")
+            return None
+    
+    def _distribute_frame(self, camera_id, frame_data):
         """Distribute frame to all subscribers of this camera"""
         with self.lock:
-            if camera_id in self.client_queues:
-                for client_queue in self.client_queues[camera_id][:]:  # Copy to avoid modification during iteration
+            # Store latest frame
+            self.latest_frames[camera_id] = frame_data
+            
+            # Immediately call all SSE callbacks for this camera
+            if camera_id in self.sse_clients:
+                for callback in self.sse_clients[camera_id][:]:
                     try:
-                        # Non-blocking put, drop frame if queue is full
-                        client_queue.put_nowait(frame_bytes)
-                    except queue.Full:
-                        # Drop oldest frame and add new one
-                        try:
-                            client_queue.get_nowait()
-                            client_queue.put_nowait(frame_bytes)
-                        except queue.Empty:
-                            pass
+                        callback(frame_data)
+                    except Exception as e:
+                        print(f"SSE callback error: {e}")
+                        # Remove broken callback
+                        self.sse_clients[camera_id].remove(callback)
 
 
 def get_frame_distributor():
@@ -161,31 +210,107 @@ def generate_frames_for_camera(app, camera_id):
     """Generator function that yields frames from the frame distributor for a specific camera"""
     with app.app_context():
         distributor = get_frame_distributor()
-        client_queue = distributor.subscribe_camera(camera_id)
+        
+        # Get latest frame immediately if available
+        latest_frame_data = distributor.get_latest_frame(camera_id)
+        if latest_frame_data and latest_frame_data.get("image_data"):
+            frame_bytes = latest_frame_data["image_data"]
+            response = (b'--frame\r\n'
+                      b'Content-Type: image/jpeg\r\n'
+                      b'Content-Length: ' + str(len(frame_bytes)).encode() + b'\r\n'
+                      b'\r\n' + 
+                      frame_bytes + 
+                      b'\r\n')
+            yield response
+        
+        # For streaming, we'll still use the old event system but simplified
+        import threading
+        client_event = threading.Event()
+        frame_buffer = {"data": None}
+        
+        def frame_callback(frame_data):
+            frame_buffer["data"] = frame_data
+            client_event.set()
+        
+        distributor.subscribe_camera(camera_id, frame_callback)
         
         try:
             while True:
                 try:
-                    # Get frame from queue with timeout
-                    frame_bytes = client_queue.get(timeout=1.0)
-                    # Stream with proper multipart boundary
-                    response = (b'--frame\r\n'
-                              b'Content-Type: image/jpeg\r\n'
-                              b'Content-Length: ' + str(len(frame_bytes)).encode() + b'\r\n'
-                              b'\r\n' + 
-                              frame_bytes + 
-                              b'\r\n')
-                    yield response
-                    
-                except queue.Empty:
-                    # Send a small keepalive frame to prevent browser timeout
-                    continue
+                    if client_event.wait(timeout=1.0):
+                        client_event.clear()
+                        frame_data = frame_buffer["data"]
+                        if frame_data and frame_data.get("image_data"):
+                            frame_bytes = frame_data["image_data"]
+                            response = (b'--frame\r\n'
+                                      b'Content-Type: image/jpeg\r\n'
+                                      b'Content-Length: ' + str(len(frame_bytes)).encode() + b'\r\n'
+                                      b'\r\n' + 
+                                      frame_bytes + 
+                                      b'\r\n')
+                            yield response
+                    else:
+                        continue
+                        
                 except Exception as e:
                     current_app.logger.error(f"Error in frame generation for {camera_id}: {e}")
                     break
         finally:
-            # Clean up subscription
-            distributor.unsubscribe_camera(camera_id, client_queue)
+            distributor.unsubscribe_camera(camera_id, frame_callback)
+
+
+def generate_sse_stream(app, camera_id):
+    """Generator for Server-Sent Events stream with frame data and metadata"""
+    with app.app_context():
+        distributor = get_frame_distributor()
+        
+        # Send initial frame if available
+        latest_frame_data = distributor.get_latest_frame(camera_id)
+        if latest_frame_data:
+            image_b64 = base64.b64encode(latest_frame_data["image_data"]).decode('utf-8')
+            data = {
+                "image": f"data:image/jpeg;base64,{image_b64}",
+                "metadata": latest_frame_data["metadata"]
+            }
+            yield f"data: {json.dumps(data)}\n\n"
+        
+        # Setup callback for new frames
+        import queue
+        frame_queue = queue.Queue(maxsize=1)
+        
+        def frame_callback(frame_data):
+            try:
+                # Clear queue and add new frame (no buffering)
+                while not frame_queue.empty():
+                    try:
+                        frame_queue.get_nowait()
+                    except queue.Empty:
+                        break
+                frame_queue.put_nowait(frame_data)
+            except queue.Full:
+                pass  # Skip if can't add immediately
+        
+        distributor.subscribe_camera(camera_id, frame_callback)
+        
+        try:
+            while True:
+                try:
+                    frame_data = frame_queue.get(timeout=1.0)
+                    if frame_data and frame_data.get("image_data"):
+                        image_b64 = base64.b64encode(frame_data["image_data"]).decode('utf-8')
+                        data = {
+                            "image": f"data:image/jpeg;base64,{image_b64}",
+                            "metadata": frame_data["metadata"]
+                        }
+                        yield f"data: {json.dumps(data)}\n\n"
+                except queue.Empty:
+                    # Send keepalive
+                    yield f"data: {json.dumps({'keepalive': True})}\n\n"
+                except Exception as e:
+                    current_app.logger.error(f"SSE error for {camera_id}: {e}")
+                    break
+        finally:
+            distributor.unsubscribe_camera(camera_id, frame_callback)
 
 
 @bp.route('/camera/<camera_id>')
@@ -194,6 +319,19 @@ def camera_feed(camera_id):
     current_app.logger.info(f"Starting video feed for camera: {camera_id}")
     return Response(generate_frames_for_camera(current_app._get_current_object(), camera_id),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@bp.route('/sse/<camera_id>')
+def camera_sse_feed(camera_id):
+    """Server-Sent Events stream for specific camera with metadata"""
+    current_app.logger.info(f"Starting SSE feed for camera: {camera_id}")
+    return Response(generate_sse_stream(current_app._get_current_object(), camera_id),
+                    mimetype='text/event-stream',
+                    headers={
+                        'Cache-Control': 'no-cache',
+                        'Connection': 'keep-alive',
+                        'Access-Control-Allow-Origin': '*'
+                    })
 
 
 @bp.route('/camera0')
@@ -206,6 +344,18 @@ def camera0_feed():
 def camera1_feed():
     """Convenience route for Camera_1"""
     return camera_feed('Camera_1')
+
+
+@bp.route('/sse/camera0')
+def camera0_sse_feed():
+    """SSE route for Camera_0"""
+    return camera_sse_feed('Camera_0')
+
+
+@bp.route('/sse/camera1')
+def camera1_sse_feed():
+    """SSE route for Camera_1"""
+    return camera_sse_feed('Camera_1')
 
 
 @bp.route('/video_feed')

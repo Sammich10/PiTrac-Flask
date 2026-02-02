@@ -5,6 +5,7 @@ from flask import (
 from app.messages.message_types import MessageType
 from app.messages.external.SystemCommandMsg import SystemCommandMsg, CommandID
 from app.messages.common.AckMessage import AckMessage
+from app.config.task_names import TaskNames
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -12,6 +13,62 @@ bp = Blueprint('api', __name__, url_prefix='/api')
 def get_pitrac():
     """Helper to get PiTrac connection from current app"""
     return current_app.pitrac_connection
+
+def build_system_command(params):
+    """Helper to build a SystemCommandMsg"""
+    
+    cmd = SystemCommandMsg()
+    
+    if not params or "command_id" not in params:
+        raise ValueError("Missing 'command_id' in parameters")
+    
+    command_id = params.get("command_id")
+    
+    if command_id == "calibrate":
+        command_id = CommandID.Calibrate
+    elif command_id == "set_mode":
+        command_id = CommandID.SetMode
+    else:
+        raise ValueError(f"Unknown command_id: {command_id}")
+    
+    if command_id == CommandID.SetMode:
+        # Set the message ID
+        cmd.command_id = CommandID.SetMode
+        # Extract mode parameter, ensure it exists
+        if "mode" not in params:
+            raise ValueError("Missing 'mode' parameter for SetMode command")
+        # Set command parameters
+        cmd.command_params = {"mode": params.get("mode")}
+        return cmd
+    elif command_id == CommandID.Calibrate:
+        cmd.command_id = CommandID.Calibrate
+        # Extract the camera_id parameter
+        msg_params = {}
+        # Find the calibration sub-command, ensure it exists
+        if "command" not in params:
+                raise ValueError("Missing 'command' parameter for Calibrate command")
+        else:
+            command = params.get("command")
+            if command == "capture":
+                msg_params["action"] = "capture_image"
+            elif command == "process":
+                msg_params["action"] = "do_distortion_cal"
+            else:
+                raise ValueError(f"Unknown calibration command: {command}")
+        # Find the camera ID parameter, optional
+        if "camera_id" in params:
+            camera_id = params.get("camera_id")
+            if camera_id == "Tee":
+                msg_params["task_name"] = TaskNames.TEE_AGENT.value
+            elif camera_id == "Flight":
+                msg_params["task_name"] = TaskNames.FLIGHT_AGENT.value
+            else:
+                # As of now, if no camera ID is given, assume command is for both cameras
+                pass
+        cmd.set_command_params(msg_params)
+        return cmd
+
+    raise ValueError(f"Unsupported command_id: {command_id}")
 
 
 @bp.route("/connect", methods=["POST"])
@@ -94,43 +151,6 @@ def change_mode():
         }), 500
 
 
-@bp.route("/calibrate", methods=["POST"])
-def calibrate():
-    """Trigger calibration"""
-    pitrac = get_pitrac()
-    
-    if not pitrac.is_connected():
-        return jsonify({"error": "Not connected to PiTrac"}), 503
-    
-    try:
-        # Create calibration command
-        cmd = SystemCommandMsg()
-        cmd.command_id = CommandID.Calibrate
-        cmd.command_params = {}
-        
-        # Send and receive response
-        response = pitrac.send_and_receive(cmd, timeout_ms=3000)
-        
-        if response:
-            return jsonify({
-                "success": True,
-                "message": "Calibration command sent",
-                "response_type": response.__class__.__name__
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "error": "No response from PiTrac (timeout)"
-            }), 504
-            
-    except Exception as e:
-        current_app.logger.error(f"Error sending calibration: {e}")
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-
 @bp.route("/send_command", methods=["POST"])
 def send_command():
     """
@@ -148,20 +168,19 @@ def send_command():
         return jsonify({"error": "Not connected to PiTrac"}), 503
     
     data = request.json
-    command_id = data.get("command_id")
-    params = data.get("params", {})
-    
-    if command_id is None:
-        return jsonify({"error": "command_id is required"}), 400
-    
+    command_msg = None
     try:
-        # Create command
-        cmd = SystemCommandMsg()
-        cmd.command_id = command_id
-        cmd.command_params = params
-        
+        command_msg = build_system_command(data)
+    except ValueError as ve:
+        current_app.logger.error(f"Error building command message: {ve}")
+        return jsonify({"error": str(ve)}), 400
+    if command_msg is None:
+        return jsonify({"error": "Unknown error creating command message"}), 400
+    
+    current_app.logger.info("Received command data: %s", command_msg.__str__())    
+    try:
         # Send and receive response
-        response = pitrac.send_and_receive(cmd, timeout_ms=3000)
+        response = pitrac.send_and_receive(command_msg, timeout_ms=3000)
         
         if response:
             return jsonify({
@@ -170,6 +189,7 @@ def send_command():
                 "response_type": response.__class__.__name__
             })
         else:
+            current_app.logger.error("No response received from PiTrac for command")
             return jsonify({
                 "success": False,
                 "error": "No response from PiTrac (timeout)"

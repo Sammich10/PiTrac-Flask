@@ -52,11 +52,40 @@
         </div>
         <div class="panel-content">
             <div class="camera-container">
-                <img id="display_1" class="display" src="" alt="PiTrac Display 1">
-                <img id="display_2" class="display" src="" alt="PiTrac Display 2">
+                <div class="camera-display">
+                    <img id="display_1" class="display" src="" alt="PiTrac Display 1">
+                    <div class="camera-metadata">
+                        <div>Camera 0</div>
+                        <div>Frame: <span id="frame_counter_0">-</span></div>
+                        <div>FPS: <span id="fps_0">-</span></div>
+                    </div>
+                </div>
+                <div class="camera-display">
+                    <img id="display_2" class="display" src="" alt="PiTrac Display 2">
+                    <div class="camera-metadata">
+                        <div>Camera 1</div>
+                        <div>Frame: <span id="frame_counter_1">-</span></div>
+                        <div>FPS: <span id="fps_1">-</span></div>
+                    </div>
+                </div>
             </div>
         </div>
-        <h2 id="streamStatus">Stream disconnected</h2>
+        <div class="panel-content">
+            <h2 id="streamStatus">Stream disconnected</h2>
+            <input type="checkbox" id="distortionCheckbox" checked>Enable Distortion Correction</input>
+        </div>
+        <div class="panel-section">
+            <select id="cameraSelect">
+                <option value="Tee">Tee Camera</option>
+                <option value="Flight">Flight Camera</option>
+            </select>
+            <select id="commandSelect">
+                <option value="capture">Capture Frame</option>
+                <option value="process">Run Distortion Calibration</option>
+            </select>
+            <button id="commandButton" onclick="sendCommand()">Send Command</button>
+            <pre id="commandResult"></pre>
+        </div>
     </div>
     <!-- Launch Monitor Panel -->
     <div id="launch-monitor-panel" class="panel-section">
