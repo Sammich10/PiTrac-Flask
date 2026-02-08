@@ -159,6 +159,41 @@ function sendCommand() {
         });
 }
 
+/**
+ * @brief Sends a command to the backend to toggle distortion correction for the specified camera.
+ * 
+ * @param {string} camera The camera identifier ("Tee" or "Flight") for which to toggle distortion correction
+ */
+function toggleDistortionCorrection(camera) {
+    if(camera === "Tee") {
+        const enabled = document.getElementById('distortionCheckbox1').checked;
+        fetch('/api/send_command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ command_id: "configure", command: "apply_calibrations",  camera_id: camera, enabled: enabled })
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('distortionResult').innerText = data.message;
+            });
+    } else if (camera === "Flight") {
+        const enabled = document.getElementById('distortionCheckbox2').checked;
+        fetch('/api/send_command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ command_id: "configure", command: "apply_calibrations",  camera_id: camera, enabled: enabled })
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('distortionResult').innerText = data.message;
+            });
+    }
+}
+
 function connectPiTrac() {
     fetch('/api/connect', {
         method: 'POST',

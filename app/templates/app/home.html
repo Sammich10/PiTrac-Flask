@@ -58,6 +58,7 @@
                         <div>Camera 0</div>
                         <div>Frame: <span id="frame_counter_0">-</span></div>
                         <div>FPS: <span id="fps_0">-</span></div>
+                        <input type="checkbox" id="distortionCheckbox1" onclick="toggleDistortionCorrection('Tee')"  unchecked>Enable Distortion Correction</input>
                     </div>
                 </div>
                 <div class="camera-display">
@@ -66,13 +67,13 @@
                         <div>Camera 1</div>
                         <div>Frame: <span id="frame_counter_1">-</span></div>
                         <div>FPS: <span id="fps_1">-</span></div>
+                        <input type="checkbox" id="distortionCheckbox2" onclick="toggleDistortionCorrection('Flight')"  unchecked>Enable Distortion Correction</input>
                     </div>
                 </div>
             </div>
         </div>
         <div class="panel-content">
             <h2 id="streamStatus">Stream disconnected</h2>
-            <input type="checkbox" id="distortionCheckbox" checked>Enable Distortion Correction</input>
         </div>
         <div class="panel-section">
             <select id="cameraSelect">

@@ -19,6 +19,10 @@ class CommandID:
     
     Calibrate = 1
     
+    Configure = 2
+    
+    GetData = 3
+    
     
     @classmethod
     def get_name(cls, value: int) -> str:
@@ -28,6 +32,10 @@ class CommandID:
             0: "SetMode",
             
             1: "Calibrate",
+            
+            2: "Configure",
+            
+            3: "GetData",
             
         }
         return mapping.get(value, f"Unknown({value})")
@@ -40,7 +48,7 @@ class SystemCommandMsg(MessageBase):
     
     # Fields
     
-    command_id: int = 0  # Command identifier (0=SetMode, 1=Calibrate)
+    command_id: int = 0  # Command identifier (0=SetMode, 1=Calibrate, 2=Configure)
     
     command_params: Dict[str, str] = field(default_factory=dict)  # Additional command parameters for future extensibility
     

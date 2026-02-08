@@ -85,7 +85,6 @@ class FrameDistributor:
                 # Non-blocking receive
                 if self.pitrac.framesocket.poll(100):
                     data = self.pitrac.framesocket.recv(zmq.NOBLOCK)
-                    print("Frame received of size:", len(data))
                     
                     # Deserialize frame
                     try:

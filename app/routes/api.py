@@ -28,6 +28,8 @@ def build_system_command(params):
         command_id = CommandID.Calibrate
     elif command_id == "set_mode":
         command_id = CommandID.SetMode
+    elif command_id == "configure":
+        command_id = CommandID.Configure
     else:
         raise ValueError(f"Unknown command_id: {command_id}")
     
@@ -63,8 +65,35 @@ def build_system_command(params):
             elif camera_id == "Flight":
                 msg_params["task_name"] = TaskNames.FLIGHT_AGENT.value
             else:
-                # As of now, if no camera ID is given, assume command is for both cameras
-                pass
+                raise ValueError(f"Unknown camera_id: {camera_id}")
+        cmd.set_command_params(msg_params)
+        return cmd
+    elif command_id == CommandID.Configure:
+        cmd.command_id = CommandID.Configure
+        # For configure, we can pass any parameters directly
+        msg_params = {}
+        if "command" not in params:
+            raise ValueError("Missing 'command' parameter for Configure command")
+        else:
+            command = params.get("command")
+            if command == "apply_calibrations":
+                enabled = params.get("enabled", False)
+                if enabled:
+                    msg_params["apply_calibrations"] = "true"
+                else:
+                    msg_params["apply_calibrations"] = "false"
+            else:
+                raise ValueError(f"Unknown configure command: {command}")
+        if "camera_id" not in params:
+            raise ValueError("Missing 'camera_id' parameter for Configure command")
+        else:
+            camera_id = params.get("camera_id")
+            if camera_id == "Tee":
+                msg_params["task_name"] = TaskNames.TEE_AGENT.value
+            elif camera_id == "Flight":
+                msg_params["task_name"] = TaskNames.FLIGHT_AGENT.value
+            else:
+                raise ValueError(f"Unknown camera_id: {camera_id}")
         cmd.set_command_params(msg_params)
         return cmd
 
