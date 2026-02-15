@@ -1,5 +1,5 @@
 from flask import (
-    Blueprint, Flask, render_template, Response, request, jsonify, 
+    Blueprint, Flask, json, render_template, Response, request, jsonify, 
     redirect, url_for, session, current_app
 )
 from app.messages.message_types import MessageType
@@ -46,17 +46,6 @@ def build_system_command(params):
         cmd.command_id = CommandID.Calibrate
         # Extract the camera_id parameter
         msg_params = {}
-        # Find the calibration sub-command, ensure it exists
-        if "command" not in params:
-                raise ValueError("Missing 'command' parameter for Calibrate command")
-        else:
-            command = params.get("command")
-            if command == "capture":
-                msg_params["action"] = "capture_image"
-            elif command == "process":
-                msg_params["action"] = "do_distortion_cal"
-            else:
-                raise ValueError(f"Unknown calibration command: {command}")
         # Find the camera ID parameter, optional
         if "camera_id" in params:
             camera_id = params.get("camera_id")
@@ -66,24 +55,22 @@ def build_system_command(params):
                 msg_params["task_name"] = TaskNames.FLIGHT_AGENT.value
             else:
                 raise ValueError(f"Unknown camera_id: {camera_id}")
+        # Find the calibration action command(s), ensure it exists
+        for(key, value) in params.items():
+            if key == "action":
+                msg_params["action"] = value
+            # Right now no other parameters are supported for calibration
+            # In the future we will hopefully support configuring other
+            # calibration parameters like chessboard size, calibration model, etc.
+            else:
+                pass
+        
         cmd.set_command_params(msg_params)
         return cmd
     elif command_id == CommandID.Configure:
         cmd.command_id = CommandID.Configure
         # For configure, we can pass any parameters directly
         msg_params = {}
-        if "command" not in params:
-            raise ValueError("Missing 'command' parameter for Configure command")
-        else:
-            command = params.get("command")
-            if command == "apply_calibrations":
-                enabled = params.get("enabled", False)
-                if enabled:
-                    msg_params["apply_calibrations"] = "true"
-                else:
-                    msg_params["apply_calibrations"] = "false"
-            else:
-                raise ValueError(f"Unknown configure command: {command}")
         if "camera_id" not in params:
             raise ValueError("Missing 'camera_id' parameter for Configure command")
         else:
@@ -94,6 +81,20 @@ def build_system_command(params):
                 msg_params["task_name"] = TaskNames.FLIGHT_AGENT.value
             else:
                 raise ValueError(f"Unknown camera_id: {camera_id}")
+            # Remove camera_id from params to avoid confusion
+            params.pop("camera_id")
+        # Add any other parameters to the command params
+        for key, value in params.items():
+            # If the value is a number, convert it to a string since command_params expects string values. If it's already a string, keep it as is. If it's something else (like a dict), we can convert it to JSON string.
+            if isinstance(value, (int, float, bool)):
+                # Convert numbers to strings, but keep booleans as strings "true"/"false"
+                if isinstance(value, bool):
+                    value = "true" if value else "false"
+                else:
+                    value = str(value)
+            elif not isinstance(value, str):
+                value = json.dumps(value)
+            msg_params[key] = value        
         cmd.set_command_params(msg_params)
         return cmd
 

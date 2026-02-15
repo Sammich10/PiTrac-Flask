@@ -159,6 +159,86 @@ function sendCommand() {
         });
 }
 
+function captureCalibrationFrame(camera) {
+    const command_id = "calibrate";
+    const command = "capture_image";
+    fetch('/api/send_command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ camera_id: camera, command_id: command_id, "action": command})
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('commandResult').innerText = data.message;
+        });
+}
+
+function acceptCalibrationFrame(camera) {
+    const command_id = "calibrate";
+    const command = "accept_image";
+    fetch('/api/send_command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ camera_id: camera, command_id: command_id, "action": command})
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('commandResult').innerText = data.message;
+        });
+}
+
+function rejectCalibrationFrame(camera) {
+    const command_id = "calibrate";
+    const command = "reject_image";
+    fetch('/api/send_command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ camera_id: camera, command_id: command_id, "action": command})
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('commandResult').innerText = data.message;
+        });
+}
+
+function runDistortionCalibration(camera) {
+    const command_id = "calibrate";
+    const command = "do_distortion_cal";
+    fetch('/api/send_command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ camera_id: camera, command_id: command_id, "action": command})
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('commandResult').innerText = data.message;
+        });
+}
+
+function saveCalibration(camera) {
+    const command_id = "calibrate";
+    const command = "save_calibration";
+    fetch('/api/send_command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ camera_id: camera, command_id: command_id, "action": command})
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('commandResult').innerText = data.message;
+        });
+}
+
 /**
  * @brief Sends a command to the backend to toggle distortion correction for the specified camera.
  * 
@@ -172,7 +252,7 @@ function toggleDistortionCorrection(camera) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ command_id: "configure", command: "apply_calibrations",  camera_id: camera, enabled: enabled })
+            body: JSON.stringify({ command_id: "configure", "apply_calibrations": enabled,  camera_id: camera})
         })
             .then(response => response.json())
             .then(data => {
@@ -185,13 +265,63 @@ function toggleDistortionCorrection(camera) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ command_id: "configure", command: "apply_calibrations",  camera_id: camera, enabled: enabled })
+            body: JSON.stringify({ command_id: "configure", "apply_calibrations": enabled,  camera_id: camera})
         })
             .then(response => response.json())
             .then(data => {
                 document.getElementById('distortionResult').innerText = data.message;
             });
     }
+}
+
+function updateExposureValue(camera) {
+    // Update the display text for the slider value
+    const sliderId = camera === "Tee" ? 'exposureSlider1' : 'exposureSlider2';
+    const level = parseFloat(document.getElementById(sliderId).value);
+    const el = document.getElementById(sliderId)
+    // Update the text next to the slider to show the current value
+    el.nextSibling.textContent = `Exposure time: ${level.toFixed(3)}s`;
+}
+
+function updateFOVValue(camera) {
+    // Update the display text for the slider value
+    const sliderId = camera === "Tee" ? 'fovSlider1' : 'fovSlider2';
+    const level = parseFloat(document.getElementById(sliderId).value);
+    const el = document.getElementById(sliderId)
+    // Update the text next to the slider to show the current value
+    el.nextSibling.textContent = `FOV: ${level.toFixed(2)}°`;
+}
+
+function updateGainValue(camera) {
+    // Update the display text for the slider value
+    const sliderId = camera === "Tee" ? 'gainSlider1' : 'gainSlider2';
+    const level = parseFloat(document.getElementById(sliderId).value);
+    const el = document.getElementById(sliderId)
+    // Update the text next to the slider to show the current value
+    el.nextSibling.textContent = `Gain: ${level.toFixed(1)}dB`;
+}
+
+function updateCameraControls(camera) {
+    const e_sliderId = camera === "Tee" ? 'exposureSlider1' : 'exposureSlider2';
+    const exposure = parseFloat(document.getElementById(e_sliderId).value);
+    const f_sliderId = camera === "Tee" ? 'fovSlider1' : 'fovSlider2';
+    const fov = parseFloat(document.getElementById(f_sliderId).value);
+    const g_sliderId = camera === "Tee" ? 'gainSlider1' : 'gainSlider2';
+    const gain = parseFloat(document.getElementById(g_sliderId).value);
+    const s_sliderId = camera === "Tee" ? 'saveConfigCheckbox1' : 'saveConfigCheckbox2';
+    const save_config = document.getElementById(s_sliderId).checked;
+    
+    fetch('/api/send_command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command_id: "configure", "set_exposure": exposure, "set_fov_scale": fov, "set_gain": gain, camera_id: camera, "apply_configuration": save_config})
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('distortionResult').innerText = data.message;
+        });
 }
 
 function connectPiTrac() {

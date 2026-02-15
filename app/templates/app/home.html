@@ -51,6 +51,9 @@
             <span class="expand-arrow">▼</span>
         </div>
         <div class="panel-content">
+            <h2 id="streamStatus">Stream disconnected</h2>
+        </div>
+        <div class="panel-content">
             <div class="camera-container">
                 <div class="camera-display">
                     <img id="display_1" class="display" src="" alt="PiTrac Display 1">
@@ -59,6 +62,16 @@
                         <div>Frame: <span id="frame_counter_0">-</span></div>
                         <div>FPS: <span id="fps_0">-</span></div>
                         <input type="checkbox" id="distortionCheckbox1" onclick="toggleDistortionCorrection('Tee')"  unchecked>Enable Distortion Correction</input>
+                        <input type="range" id="exposureSlider1" min="0" max="0.1" step="0.001" value="0.05" oninput="updateExposureValue('Tee')">Exposure time</input>
+                        <input type="range" id="fovSlider1" min="0.5" max="1.5" step="0.01" value="1.0" oninput="updateFOVValue('Tee')">FOV</input>
+                        <input type="range" id="gainSlider1" min="0.0" max="10.0" step="0.01" value="1.0" oninput="updateGainValue('Tee')">Gain</input>
+                        <input type="checkbox" id="saveConfigCheckbox1" unchecked>Save Configuration</input>
+                        <button id="update-controls" onclick="updateCameraControls('Tee')">Update Camera Controls</button>
+                        <button id="capture-calibration" onclick="captureCalibrationFrame('Tee')">Capture Calibration Frame</button>
+                        <button id="accept-frame" onclick="acceptCalibrationFrame('Tee')">Accept Calibration Frame</button>
+                        <button id="reject-frame" onclick="rejectCalibrationFrame('Tee')">Reject Calibration Frame</button>
+                        <button id="run-calibration" onclick="runDistortionCalibration('Tee')">Run Distortion Calibration</button>   
+                        <button id="save-calibration" onclick="saveCalibration('Tee')">Save Calibration</button>
                     </div>
                 </div>
                 <div class="camera-display">
@@ -68,24 +81,20 @@
                         <div>Frame: <span id="frame_counter_1">-</span></div>
                         <div>FPS: <span id="fps_1">-</span></div>
                         <input type="checkbox" id="distortionCheckbox2" onclick="toggleDistortionCorrection('Flight')"  unchecked>Enable Distortion Correction</input>
+                        <input type="range" id="exposureSlider2" min="0" max="0.1" step="0.001" value="0.05" oninput="updateExposureValue('Flight')">Exposure time</input>
+                        <input type="range" id="fovSlider2" min="0.5" max="1.5" step="0.01" value="1.0" oninput="updateFOVValue('Flight')">FOV</input>
+                        <input type="range" id="gainSlider2" min="0.0" max="10.0" step="0.01" value="1.0" oninput="updateGainValue('Flight')">Gain</input>
+                        <input type="checkbox" id="saveConfigCheckbox2" unchecked>Save Configuration</input>
+                        <button id="update-controls" onclick="updateCameraControls('Flight')">Update Camera Controls</button>
+                        <button id="capture-calibration" onclick="captureCalibrationFrame('Flight')">Capture Calibration Frame</button>
+                        <button id="accept-frame" onclick="acceptCalibrationFrame('Flight')">Accept Calibration Frame</button>
+                        <button id="reject-frame" onclick="rejectCalibrationFrame('Flight')">Reject Calibration Frame</button>
+                        <button id="run-calibration" onclick="runDistortionCalibration('Flight')">Run Distortion Calibration</button>   
+                        <button id="save-calibration" onclick="saveCalibration('Flight')">Save Calibration</button>
+                    </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="panel-content">
-            <h2 id="streamStatus">Stream disconnected</h2>
-        </div>
-        <div class="panel-section">
-            <select id="cameraSelect">
-                <option value="Tee">Tee Camera</option>
-                <option value="Flight">Flight Camera</option>
-            </select>
-            <select id="commandSelect">
-                <option value="capture">Capture Frame</option>
-                <option value="process">Run Distortion Calibration</option>
-            </select>
-            <button id="commandButton" onclick="sendCommand()">Send Command</button>
-            <pre id="commandResult"></pre>
         </div>
     </div>
     <!-- Launch Monitor Panel -->
