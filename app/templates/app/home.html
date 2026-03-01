@@ -62,6 +62,7 @@
                         <div>Frame: <span id="frame_counter_0">-</span></div>
                         <div>FPS: <span id="fps_0">-</span></div>
                         <input type="checkbox" id="distortionCheckbox1" onclick="toggleDistortionCorrection('Tee')"  unchecked>Enable Distortion Correction</input>
+                        <input type="checkbox" id="liveDetectionCheckbox1" onclick="toggleLiveDetection('Tee')"  unchecked>Enable Live Ball Detection</input>
                         <input type="range" id="exposureSlider1" min="0" max="0.1" step="0.001" value="0.05" oninput="updateExposureValue('Tee')">Exposure time</input>
                         <input type="range" id="fovSlider1" min="0.5" max="1.5" step="0.01" value="1.0" oninput="updateFOVValue('Tee')">FOV</input>
                         <input type="range" id="gainSlider1" min="0.0" max="10.0" step="0.01" value="1.0" oninput="updateGainValue('Tee')">Gain</input>
@@ -81,6 +82,7 @@
                         <div>Frame: <span id="frame_counter_1">-</span></div>
                         <div>FPS: <span id="fps_1">-</span></div>
                         <input type="checkbox" id="distortionCheckbox2" onclick="toggleDistortionCorrection('Flight')"  unchecked>Enable Distortion Correction</input>
+                        <input type="checkbox" id="liveDetectionCheckbox2" onclick="toggleLiveDetection('Flight')"  unchecked>Enable Live Ball Detection</input>
                         <input type="range" id="exposureSlider2" min="0" max="0.1" step="0.001" value="0.05" oninput="updateExposureValue('Flight')">Exposure time</input>
                         <input type="range" id="fovSlider2" min="0.5" max="1.5" step="0.01" value="1.0" oninput="updateFOVValue('Flight')">FOV</input>
                         <input type="range" id="gainSlider2" min="0.0" max="10.0" step="0.01" value="1.0" oninput="updateGainValue('Flight')">Gain</input>

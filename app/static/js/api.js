@@ -274,6 +274,36 @@ function toggleDistortionCorrection(camera) {
     }
 }
 
+function toggleLiveDetection(camera) {
+    if(camera === "Tee") {
+        const enabled = document.getElementById('liveDetectionCheckbox1').checked;
+        fetch('/api/send_command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ command_id: "configure", "enable_live_detection": enabled,  camera_id: camera})
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('liveDetectionResult').innerText = data.message;
+            });
+    } else if (camera === "Flight") {
+        const enabled = document.getElementById('liveDetectionCheckbox2').checked;
+        fetch('/api/send_command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ command_id: "configure", "enable_live_detection": enabled,  camera_id: camera})
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('liveDetectionResult').innerText = data.message;
+            });
+    }
+}
+
 function updateExposureValue(camera) {
     // Update the display text for the slider value
     const sliderId = camera === "Tee" ? 'exposureSlider1' : 'exposureSlider2';
