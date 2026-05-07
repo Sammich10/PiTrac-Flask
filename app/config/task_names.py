@@ -10,8 +10,7 @@ from typing import List, Optional
 class TaskNames(Enum):
     """Task names that match the C++ TaskNames enum"""
     SYSTEM_MANAGER = "SystemManager"
-    FLIGHT_AGENT = "FlightAgent"  
-    TEE_AGENT = "TeeAgent"
+    FLIGHT_PROCESSOR = "FlightProcessor"
 
 class TaskNameUtils:
     """Utility functions for task name validation and conversion"""
@@ -36,5 +35,4 @@ class TaskNameUtils:
 
 # For easier imports
 SYSTEM_MANAGER = TaskNames.SYSTEM_MANAGER.value
-FLIGHT_AGENT = TaskNames.FLIGHT_AGENT.value
-TEE_AGENT = TaskNames.TEE_AGENT.value
+FLIGHT_PROCESSOR = TaskNames.FLIGHT_PROCESSOR.value

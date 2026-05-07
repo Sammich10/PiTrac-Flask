@@ -17,6 +17,22 @@ body {
     color: var(--text-color-dark);
 }
 
+.flex-content-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.flex-content-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
 #navbar-container {
     background-color: var(--primary-bg-color);
     overflow: hidden;
@@ -57,13 +73,17 @@ body {
 }
 
 .panel-content {
-    width: 100%;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 20px;
+    background-color: var(--primary-bg-color);
+    color: var(--text-color);
+    width: auto;
+    height: fit-content;
+    border-radius: 6px;
+}
+
+.panel-content * h1, .panel-content * h2, .panel-content * h3{
+    margin: 10px 10px 10px 10px;
+    text-align: center;
+    color: var(--text-color);
 }
 
 .panel-section {
@@ -88,7 +108,7 @@ body {
 
 .panel-section *{
     font-size: 1.2vh;
-    margin-bottom: 0.8vh;
+    padding-bottom: 0.8vh;
 }
 
 .display {
@@ -114,18 +134,14 @@ body {
     max-height: 60px;
 }
 
-.expandable-panel.expanded {
-    max-height: 80vh;
-    overflow: scroll;
-}
-
 .panel-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     cursor: pointer;
     padding: 10px 20px;
     user-select: none;
+    gap: 0.5vw;
 }
 
 .panel-header:hover {
@@ -135,10 +151,15 @@ body {
 .expand-arrow {
     font-size: 1.5em;
     transition: transform 0.3s ease;
+    transform-origin: center center;
+    display: inline-block;
+    padding: 0;
 }
 
-.expandable-panel.expanded .expand-arrow {
+.expandable-panel.expanded > .panel-header > .expand-arrow {
     transform: rotate(180deg);
+    transform-origin: center center;
+    display: inline-block;
 }
 
 .expandable-panel .panel-content {
@@ -160,7 +181,7 @@ body {
     display: flex;
     gap: 20px;
     justify-content: center;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
 }
 
 .camera-display {
@@ -186,16 +207,116 @@ body {
     text-align: center;
     min-width: 120px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
+    width: 40vw;
 }
 
-#distortionCheckbox1 {
-    margin-top: 5px;
+.camera-metadata div{
+    margin: 8px;
+}
+
+.camera-settings {
     display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    background-color: var(--primary-bg-color);
+    padding: 10px;
+    border-radius: 5px;
+    width: 40vw;
+}
+
+.camera-settings-panel {
+    background-color: var(--primary-bg-color);
+    border-radius: 5px;
+    width: 40vw;
+    margin-top: 10px;
     flex-direction: row;
 }
 
-.camera-metadata div {
-    margin: 2px 0;
+.camera-settings-panel .panel-header {
+    background-color: var(--secondary-bg-color);
+    border-radius: 5px;
+    padding: 8px 15px;
+    margin: 0;
 }
+
+.camera-settings-panel .panel-header h3 {
+    margin: 0;
+    font-size: 1em;
+    text-align: center;
+    justify-content: center;
+    color: var(--text-color)
+}
+
+.camera-settings-panel.collapsed {
+    max-height: 45px;
+}
+
+.camera-settings-panel.expanded {
+}
+
+.camera-settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+}
+
+.setting-input {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    gap: 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.setting-input label {
+    flex: 0 0 auto;
+    min-width: 100px;
+    align-items: center;
+    text-align: left;
+}
+
+.setting-input input[type="number"] {
+    flex: 1;
+    padding: 5px;
+    background-color: var(--secondary-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.calibration-menu-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    background-color: var(--primary-bg-color);
+    color: var(--text-color);
+    border-radius: 10px;
+    width: 80vw;
+}
+
+.calibration-buttons button {
+    background-color: var(--secondary-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.calibration-buttons button:hover {
+    background-color: var(--hover-bg-color);
+    color: var(--text-color-dark);
+}
+

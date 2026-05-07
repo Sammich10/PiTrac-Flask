@@ -17,9 +17,10 @@ class MessageType(IntEnum):
     RegisterTask = 102
 
     # External Messages (200-299) - Communication with host/Flask app
-    CameraFrame = 200
-    SystemCommand = 201
-    TaskStatus = 202
+    CameraConfiguration = 200
+    CameraFrame = 201
+    SystemCommand = 202
+    TaskStatus = 203
 
     @classmethod
     def get_category(cls, msg_type: 'MessageType') -> str:
@@ -70,6 +71,11 @@ MESSAGE_TYPE_INFO = {
         'category': 'Internal',
         'description': 'Internal message for registering tasks with the system manager',
         'file': 'RegisterTaskMsg.json'
+    },
+    MessageType.CameraConfiguration: {
+        'category': 'External',
+        'description': 'Camera configuration details including settings and capabilities',
+        'file': 'CameraConfigurationMsg.json'
     },
     MessageType.CameraFrame: {
         'category': 'External',

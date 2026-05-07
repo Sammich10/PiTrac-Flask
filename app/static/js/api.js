@@ -3,39 +3,11 @@ let panelExpanded = false;
 let sseCamera0 = null;
 let sseCamera1 = null;
 
-function toggleViewfinderPanel() {
-    const panel = document.getElementById('viewfinder-panel');
-    const arrow = panel.querySelector('.expand-arrow');
-    
-    if (panelExpanded) {
-        // Collapse panel and stop stream
-        panel.classList.remove('expanded');
-        panel.classList.add('collapsed');
-        arrow.style.transform = 'rotate(0deg)';
-        panelExpanded = false;
-        
-        // Stop stream when collapsing
-        if (streamActive) {
-            stopStream();
-        }
-    } else {
-        // Expand panel and start stream
-        panel.classList.remove('collapsed');
-        panel.classList.add('expanded');
-        arrow.style.transform = 'rotate(180deg)';
-        panelExpanded = true;
-        
-        // Start stream when expanding (if connected)
-        if (!streamActive) {
-            startStream();
-        }
-    }
-}
-
 function startStream() {
     const img1 = document.getElementById('display_1');
     const img2 = document.getElementById('display_2');
-    const status = document.getElementById('streamStatus');
+    const status1 = document.getElementById('camera0Title');
+    const status2 = document.getElementById('camera1Title');
     
     console.log('Starting SSE dual camera streams...');
     
@@ -52,6 +24,9 @@ function startStream() {
                 if (data.metadata) {
                     document.getElementById('frame_counter_0').innerText = data.metadata.frame_number || '-';
                     document.getElementById('fps_0').innerText = (data.metadata.fps || 0).toFixed(1);
+                    document.getElementById('exposure_0').innerText = `${parseFloat(data.metadata.exposure || 0).toFixed(4)} s`;
+                    document.getElementById('fov_0').innerText = `${parseFloat(data.metadata.fov_scale || 0).toFixed(2)}°`;
+                    document.getElementById('gain_0').innerText = `${parseFloat(data.metadata.gain || 0).toFixed(2)} dB`;
                 }
             }
         } catch (e) {
@@ -61,8 +36,9 @@ function startStream() {
     
     sseCamera0.onerror = function(event) {
         console.error('Camera 0 SSE connection error');
-        status.innerText = 'Camera 0 connection failed';
+        status1.innerText = 'Camera 0 connection failed';
     };
+    status1.innerText = 'Camera 0 stream connected';
     
     // Start SSE for Camera 1
     sseCamera1 = new EventSource('/stream/sse/camera1');
@@ -77,6 +53,9 @@ function startStream() {
                 if (data.metadata) {
                     document.getElementById('frame_counter_1').innerText = data.metadata.frame_number || '-';
                     document.getElementById('fps_1').innerText = (data.metadata.fps || 0).toFixed(1);
+                    document.getElementById('exposure_1').innerText = `${parseFloat(data.metadata.exposure || 0).toFixed(4)} s`;
+                    document.getElementById('fov_1').innerText = `${parseFloat(data.metadata.fov_scale || 0).toFixed(2)}°`;
+                    document.getElementById('gain_1').innerText = `${parseFloat(data.metadata.gain || 0).toFixed(2)} dB`;
                 }
             }
         } catch (e) {
@@ -86,17 +65,17 @@ function startStream() {
     
     sseCamera1.onerror = function(event) {
         console.error('Camera 1 SSE connection error');
-        status.innerText = 'Camera 1 connection failed';
+        status2.innerText = 'Camera 1 connection failed';
     };
     
-    status.innerText = 'SSE streams connected';
+    status2.innerText = 'Camera 1 stream connected';
+
     streamActive = true;
 }
 
 function stopStream() {
     const img1 = document.getElementById('display_1');
     const img2 = document.getElementById('display_2');
-    const status = document.getElementById('streamStatus');
     
     console.log('Stopping SSE dual camera streams...');
     
@@ -122,7 +101,6 @@ function stopStream() {
     document.getElementById('frame_counter_1').innerText = '-';
     document.getElementById('fps_1').innerText = '-';
     
-    status.innerText = 'Streams disconnected';
     streamActive = false;
 }
 
@@ -242,103 +220,78 @@ function saveCalibration(camera) {
 /**
  * @brief Sends a command to the backend to toggle distortion correction for the specified camera.
  * 
- * @param {string} camera The camera identifier ("Tee" or "Flight") for which to toggle distortion correction
+ * @param {string} camera The camera identifier ('0' or '1') for which to toggle distortion correction
  */
 function toggleDistortionCorrection(camera) {
-    if(camera === "Tee") {
-        const enabled = document.getElementById('distortionCheckbox1').checked;
-        fetch('/api/send_command', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ command_id: "configure", "apply_calibrations": enabled,  camera_id: camera})
-        })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('distortionResult').innerText = data.message;
-            });
-    } else if (camera === "Flight") {
-        const enabled = document.getElementById('distortionCheckbox2').checked;
-        fetch('/api/send_command', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ command_id: "configure", "apply_calibrations": enabled,  camera_id: camera})
-        })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('distortionResult').innerText = data.message;
-            });
-    }
+    const checkbox = (camera == '0') ? document.getElementById('distortionCheckbox0') : document.getElementById('distortionCheckbox1');
+    const enabled = checkbox.checked;
+    fetch('/api/send_command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command_id: "configure", "apply_calibrations": enabled,  camera_id: camera})
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('distortionResult').innerText = data.message;
+        });
 }
 
 function toggleLiveDetection(camera) {
-    if(camera === "Tee") {
-        const enabled = document.getElementById('liveDetectionCheckbox1').checked;
-        fetch('/api/send_command', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ command_id: "configure", "enable_live_detection": enabled,  camera_id: camera})
-        })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('liveDetectionResult').innerText = data.message;
-            });
-    } else if (camera === "Flight") {
-        const enabled = document.getElementById('liveDetectionCheckbox2').checked;
-        fetch('/api/send_command', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ command_id: "configure", "enable_live_detection": enabled,  camera_id: camera})
-        })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('liveDetectionResult').innerText = data.message;
-            });
-    }
+    const checkbox = (camera == '0') ? document.getElementById('liveDetectionCheckbox0') : document.getElementById('liveDetectionCheckbox1');
+    const enabled = checkbox.checked;
+    fetch('/api/send_command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command_id: "configure", "enable_live_detection": enabled,  camera_id: camera})
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('liveDetectionResult').innerText = data.message;
+        });
 }
 
 function updateExposureValue(camera) {
     // Update the display text for the slider value
-    const sliderId = camera === "Tee" ? 'exposureSlider1' : 'exposureSlider2';
-    const level = parseFloat(document.getElementById(sliderId).value);
-    const el = document.getElementById(sliderId)
+    const labelId = camera === '0' ? 'exposure_0' : 'exposure_1';
+    const inputId = camera === '0' ? 'exposureSet0' : 'exposureSet1';
+    const level = parseFloat(document.getElementById(inputId).value);
+    const el = document.getElementById(labelId)
     // Update the text next to the slider to show the current value
-    el.nextSibling.textContent = `Exposure time: ${level.toFixed(3)}s`;
+    //el.innerText = `${level.toFixed(3)}s`;
 }
 
 function updateFOVValue(camera) {
     // Update the display text for the slider value
-    const sliderId = camera === "Tee" ? 'fovSlider1' : 'fovSlider2';
-    const level = parseFloat(document.getElementById(sliderId).value);
-    const el = document.getElementById(sliderId)
+    const labelId = camera === '0' ? 'fov_0' : 'fov_1';
+    const inputId = camera === '0' ? 'fovSet0' : 'fovSet1';
+    const level = parseFloat(document.getElementById(inputId).value);
+    const el = document.getElementById(labelId)
     // Update the text next to the slider to show the current value
-    el.nextSibling.textContent = `FOV: ${level.toFixed(2)}°`;
+    //el.innerText = `${level.toFixed(2)}°`;
 }
 
 function updateGainValue(camera) {
     // Update the display text for the slider value
-    const sliderId = camera === "Tee" ? 'gainSlider1' : 'gainSlider2';
-    const level = parseFloat(document.getElementById(sliderId).value);
-    const el = document.getElementById(sliderId)
+    const labelId = camera === '0' ? 'gain_0' : 'gain_1';
+    const inputId = camera === '0' ? 'gainSet0' : 'gainSet1';
+    const level = parseFloat(document.getElementById(inputId).value);
+    const el = document.getElementById(labelId)
     // Update the text next to the slider to show the current value
-    el.nextSibling.textContent = `Gain: ${level.toFixed(1)}dB`;
+    //el.innerText = `${level.toFixed(2)}dB`;
 }
 
 function updateCameraControls(camera) {
-    const e_sliderId = camera === "Tee" ? 'exposureSlider1' : 'exposureSlider2';
+    const e_sliderId = camera === '0' ? 'exposureSet0' : 'exposureSet1';
     const exposure = parseFloat(document.getElementById(e_sliderId).value);
-    const f_sliderId = camera === "Tee" ? 'fovSlider1' : 'fovSlider2';
+    const f_sliderId = camera === '0' ? 'fovSet0' : 'fovSet1';
     const fov = parseFloat(document.getElementById(f_sliderId).value);
-    const g_sliderId = camera === "Tee" ? 'gainSlider1' : 'gainSlider2';
+    const g_sliderId = camera === '0' ? 'gainSet0' : 'gainSet1';
     const gain = parseFloat(document.getElementById(g_sliderId).value);
-    const s_sliderId = camera === "Tee" ? 'saveConfigCheckbox1' : 'saveConfigCheckbox2';
+    const s_sliderId = camera === '0' ? 'saveConfigCheckbox0' : 'saveConfigCheckbox1';
     const save_config = document.getElementById(s_sliderId).checked;
     
     fetch('/api/send_command', {
@@ -385,31 +338,42 @@ function getStatus() {
         });
 }
 
-function toggleViewfinderPanel() {
-    const panel = document.getElementById('viewfinder-panel');
-    const arrow = panel.querySelector('.expand-arrow');
+function togglePanel(event) {
+    // Get the panel-header that was clicked
+    const panelHeader = event.currentTarget;
+    // Get the parent panel (the expandable-panel div)
+    const panel = panelHeader.parentElement;
+    const arrow = panelHeader.querySelector('.expand-arrow');
     
-    if (panelExpanded) {
-        // Collapse panel and stop stream
-        panel.classList.remove('expanded');
-        panel.classList.add('collapsed');
-        arrow.style.transform = 'rotate(0deg)';
-        panelExpanded = false;
-        
-        // Stop stream when collapsing
-        if (streamActive) {
-            stopStream();
-        }
-    } else {
-        // Expand panel and start stream
+    const isCollapsed = panel.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+        // Expand panel
         panel.classList.remove('collapsed');
         panel.classList.add('expanded');
+        arrow.style.transformOrigin = 'center center';
         arrow.style.transform = 'rotate(180deg)';
-        panelExpanded = true;
         
-        // Start stream when expanding (if connected)
-        if (!streamActive) {
-            startStream();
+        // Special handling for viewfinder panel - start stream
+        if (panel.id === 'viewfinder-panel') {
+            panelExpanded = true;
+            if (!streamActive) {
+                startStream();
+            }
+        }
+    } else {
+        // Collapse panel
+        panel.classList.remove('expanded');
+        panel.classList.add('collapsed');
+        arrow.style.transformOrigin = 'center center';
+        arrow.style.transform = 'rotate(0deg)';
+        
+        // Special handling for viewfinder panel - stop stream
+        if (panel.id === 'viewfinder-panel') {
+            panelExpanded = false;
+            if (streamActive) {
+                stopStream();
+            }
         }
     }
 }
@@ -424,6 +388,12 @@ window.onload = function() {
     // Initialize panel as collapsed
     const panel = document.getElementById('viewfinder-panel');
     panel.classList.add('collapsed');
+    
+    // Initialize camera settings panels as collapsed
+    const camera0Settings = document.getElementById('camera0Settings');
+    const camera1Settings = document.getElementById('camera1Settings');
+    if (camera0Settings) camera0Settings.classList.add('collapsed');
+    if (camera1Settings) camera1Settings.classList.add('collapsed');
     
     // Hide video displays initially
     document.getElementById('display_1').style.display = 'none';

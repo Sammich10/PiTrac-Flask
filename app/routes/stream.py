@@ -160,7 +160,10 @@ class FrameDistributor:
                         "camera_id": frame_msg.camera_id,
                         "frame_number": frame_msg.frame_number,
                         "timestamp": frame_msg.capture_timestamp,
-                        "fps": frame_msg.fps
+                        "fps": frame_msg.fps,
+                        "exposure": frame_msg.metadata.get("ExposureTime", None),
+                        "fov_scale": frame_msg.metadata.get("FOVScale", None),
+                        "gain": frame_msg.metadata.get("AnalogGain", None)
                     }
                 }
                 return frame_data

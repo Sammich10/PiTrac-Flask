@@ -15,21 +15,20 @@
         </nav>
     </div>
     <!-- Control Panel for connecting, changing Pi Mode, etc -->
-    <div id="control-panel-container" class="panel-section">
+    <div id="control-panel-container" class="panel-section flex-content-column">
         <h1 class="panel-title">PiTrac Control Panel</h1>
-        <div id="control-panel" class="panel-content">
+        <div id="control-panel" class="flex-content-row">
             <!--Connect Button-->
-            <div id="connect-container" class="panel-section">
+            <div id="connect-container" class="panel-content flex-content-column">
                 <h1>Connect to PiTrac</h1>
                 <button onclick="connectPiTrac()">Connect to PiTrac</button>
                 <p id="connectResult"></p>
             </div>
             <!--Dropdown for mode selection-->
-            <div id="mode-control-container" class="panel-section">
+            <div id="mode-control-container" class="panel-content flex-content-column">
                 <h1>Change PiTrac Mode</h1>
                 <select id="modeSelect">
                     <option value="standby">Standby</option>
-                    <option value="viewfinder">Viewfinder</option>
                     <option value="calibration">Calibration</option>
                     <option value="launch_monitor">Launch Monitor</option>
                     <option value="diagnostics">Diagnostics</option>
@@ -37,7 +36,7 @@
                 <button onclick="changeMode()">Change Mode</button>
                 <p id="result"></p>
             </div>
-            <div id="status-container" class="panel-section">
+            <div id="status-container" class="panel-content flex-content-column">
                 <h1>PiTrac Status</h1>
                 <button onclick="getStatus()">Get Status</button>
                 <pre id="statusResult"></pre>
@@ -46,55 +45,133 @@
     </div>
     <!-- Viewfinder/Calibration Panel -->
     <div id="viewfinder-panel" class="panel-section expandable-panel collapsed">
-        <div class="panel-header" onclick="toggleViewfinderPanel()">
+        <div class="panel-header" onclick="togglePanel(event)">
             <h1>Viewfinder/Calibration</h1>
             <span class="expand-arrow">▼</span>
         </div>
-        <div class="panel-content">
-            <h2 id="streamStatus">Stream disconnected</h2>
-        </div>
-        <div class="panel-content">
+        <div>
             <div class="camera-container">
                 <div class="camera-display">
+                    <h2 id="camera0Title">Camera 0</h2>
                     <img id="display_1" class="display" src="" alt="PiTrac Display 1">
                     <div class="camera-metadata">
-                        <div>Camera 0</div>
                         <div>Frame: <span id="frame_counter_0">-</span></div>
                         <div>FPS: <span id="fps_0">-</span></div>
-                        <input type="checkbox" id="distortionCheckbox1" onclick="toggleDistortionCorrection('Tee')"  unchecked>Enable Distortion Correction</input>
-                        <input type="checkbox" id="liveDetectionCheckbox1" onclick="toggleLiveDetection('Tee')"  unchecked>Enable Live Ball Detection</input>
-                        <input type="range" id="exposureSlider1" min="0" max="0.1" step="0.001" value="0.05" oninput="updateExposureValue('Tee')">Exposure time</input>
-                        <input type="range" id="fovSlider1" min="0.5" max="1.5" step="0.01" value="1.0" oninput="updateFOVValue('Tee')">FOV</input>
-                        <input type="range" id="gainSlider1" min="0.0" max="10.0" step="0.01" value="1.0" oninput="updateGainValue('Tee')">Gain</input>
-                        <input type="checkbox" id="saveConfigCheckbox1" unchecked>Save Configuration</input>
-                        <button id="update-controls" onclick="updateCameraControls('Tee')">Update Camera Controls</button>
-                        <button id="capture-calibration" onclick="captureCalibrationFrame('Tee')">Capture Calibration Frame</button>
-                        <button id="accept-frame" onclick="acceptCalibrationFrame('Tee')">Accept Calibration Frame</button>
-                        <button id="reject-frame" onclick="rejectCalibrationFrame('Tee')">Reject Calibration Frame</button>
-                        <button id="run-calibration" onclick="runDistortionCalibration('Tee')">Run Distortion Calibration</button>   
-                        <button id="save-calibration" onclick="saveCalibration('Tee')">Save Calibration</button>
+                        <div>Exposure: <span id="exposure_0">-</span></div>
+                        <div>FOV: <span id="fov_0">-</span></div>
+                        <div>Gain: <span id="gain_0">-</span></div>
+                    </div>
+                    <div id="camera0Settings" class="camera-settings-panel expandable-panel collapsed">
+                        <div class="panel-header" onclick="togglePanel(event)">
+                            <h3>Camera 0 Settings</h3>
+                            <span class="expand-arrow">▼</span>
+                        </div>
+                        <div class="panel-content flex-content-row">
+                            <div class="camera-settings-content">
+                                <div class="setting-input">
+                                    <label for="distortionCheckbox0">Enable Distortion Correction:</label>
+                                    <input type="checkbox" id="distortionCheckbox0" onclick="toggleDistortionCorrection('0')" unchecked>
+                                </div>
+                                <div class="setting-input">
+                                    <label for="liveDetectionCheckbox0">Enable Live Ball Detection:</label>
+                                    <input type="checkbox" id="liveDetectionCheckbox0" onclick="toggleLiveDetection('0')"  unchecked>
+                                </div>
+                                <div class="setting-input">
+                                    <label for="exposureSet0">Exposure time:</label>
+                                    <input type="number" id="exposureSet0" min="0" max="0.1" step="0.001" value="0.05" oninput="updateExposureValue('0')">
+                                </div>
+                                <div class="setting-input">
+                                    <label for="fovSet0">FOV:</label>
+                                    <input type="number" id="fovSet0" min="0.5" max="1.5" step="0.01" value="1.0" oninput="updateFOVValue('0')">
+                                </div>
+                                <div class="setting-input">
+                                    <label for="gainSet0">Gain:</label>
+                                    <input type="number" id="gainSet0" min="0.0" max="10.0" step="0.01" value="1.0" oninput="updateGainValue('0')">
+                                </div>
+                                <div class="setting-input">
+                                    <label for="saveConfigCheckbox0">Save Configuration:</label>
+                                    <input type="checkbox" id="saveConfigCheckbox0" unchecked>
+                                </div>
+                                <button id="update-controls" onclick="updateCameraControls('0')">Update Camera Controls</button>
+                            </div>
+                            <div class="calibration-buttons flex-content-column">
+                                <h2>Distortion Calibration</h2>
+                                <button id="capture-calibration" onclick="captureCalibrationFrame('0')">Capture Calibration Frame</button>
+                                <button id="accept-frame" onclick="acceptCalibrationFrame('0')">Accept Calibration Frame</button>
+                                <button id="reject-frame" onclick="rejectCalibrationFrame('0')">Reject Calibration Frame</button>
+                                <button id="run-calibration" onclick="runDistortionCalibration('0')">Run Distortion Calibration</button>   
+                                <button id="save-calibration" onclick="saveCalibration('0')">Save Calibration</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="camera-display">
+                    <h2 id="camera1Title">Camera 1</h2>
                     <img id="display_2" class="display" src="" alt="PiTrac Display 2">
                     <div class="camera-metadata">
-                        <div>Camera 1</div>
                         <div>Frame: <span id="frame_counter_1">-</span></div>
                         <div>FPS: <span id="fps_1">-</span></div>
-                        <input type="checkbox" id="distortionCheckbox2" onclick="toggleDistortionCorrection('Flight')"  unchecked>Enable Distortion Correction</input>
-                        <input type="checkbox" id="liveDetectionCheckbox2" onclick="toggleLiveDetection('Flight')"  unchecked>Enable Live Ball Detection</input>
-                        <input type="range" id="exposureSlider2" min="0" max="0.1" step="0.001" value="0.05" oninput="updateExposureValue('Flight')">Exposure time</input>
-                        <input type="range" id="fovSlider2" min="0.5" max="1.5" step="0.01" value="1.0" oninput="updateFOVValue('Flight')">FOV</input>
-                        <input type="range" id="gainSlider2" min="0.0" max="10.0" step="0.01" value="1.0" oninput="updateGainValue('Flight')">Gain</input>
-                        <input type="checkbox" id="saveConfigCheckbox2" unchecked>Save Configuration</input>
-                        <button id="update-controls" onclick="updateCameraControls('Flight')">Update Camera Controls</button>
-                        <button id="capture-calibration" onclick="captureCalibrationFrame('Flight')">Capture Calibration Frame</button>
-                        <button id="accept-frame" onclick="acceptCalibrationFrame('Flight')">Accept Calibration Frame</button>
-                        <button id="reject-frame" onclick="rejectCalibrationFrame('Flight')">Reject Calibration Frame</button>
-                        <button id="run-calibration" onclick="runDistortionCalibration('Flight')">Run Distortion Calibration</button>   
-                        <button id="save-calibration" onclick="saveCalibration('Flight')">Save Calibration</button>
+                        <div>Exposure: <span id="exposure_1">-</span></div>
+                        <div>FOV: <span id="fov_1">-</span></div>
+                        <div>Gain: <span id="gain_1">-</span></div>
                     </div>
+                    <div id="camera1Settings" class="camera-settings-panel expandable-panel collapsed">
+                        <div class="panel-header" onclick="togglePanel(event)">
+                            <h3>Camera 1 Settings</h3>
+                            <span class="expand-arrow">▼</span>
+                        </div>
+                        <div class="panel-content flex-content-row">
+                            <div class="camera-settings-content">
+                                <div class="setting-input">
+                                    <label for="distortionCheckbox1">Enable Distortion Correction:</label>
+                                    <input type="checkbox" id="distortionCheckbox1" onclick="toggleDistortionCorrection('1')"  unchecked>
+                                </div>
+                                <div class="setting-input">
+                                    <label for="liveDetectionCheckbox1">Enable Live Ball Detection:</label>
+                                    <input type="checkbox" id="liveDetectionCheckbox1" onclick="toggleLiveDetection('1')"  unchecked>
+                                </div>
+                                <div class="setting-input">
+                                    <label for="exposureSet1">Exposure time:</label>
+                                    <input type="number" id="exposureSet1" min="0" max="0.1" step="0.001" value="0.05" oninput="updateExposureValue('1')">
+                                </div>
+                                <div class="setting-input">
+                                    <label for="fovSet1">FOV:</label>
+                                    <input type="number" id="fovSet1" min="0.5" max="1.5" step="0.01" value="1.0" oninput="updateFOVValue('1')">
+                                </div>
+                                <div class="setting-input">
+                                    <label for="gainSet1">Gain:</label>
+                                    <input type="number" id="gainSet1" min="0.0" max="10.0" step="0.01" value="1.0" oninput="updateGainValue('1')">
+                                </div>
+                                <div class="setting-input">
+                                    <label for="saveConfigCheckbox1">Save Configuration:</label>
+                                    <input type="checkbox" id="saveConfigCheckbox1" unchecked>
+                                </div>
+                                <button id="update-controls" onclick="updateCameraControls('1')">Update Camera Controls</button>
+                            </div>
+                            <div class="calibration-buttons flex-content-column">
+                                <h2>Distortion Calibration</h2>
+                                <button id="capture-calibration" onclick="captureCalibrationFrame('1')">Capture Calibration Frame</button>
+                                <button id="accept-frame" onclick="acceptCalibrationFrame('1')">Accept Calibration Frame</button>
+                                <button id="reject-frame" onclick="rejectCalibrationFrame('1')">Reject Calibration Frame</button>
+                                <button id="run-calibration" onclick="runDistortionCalibration('1')">Run Distortion Calibration</button>   
+                                <button id="save-calibration" onclick="saveCalibration('1')">Save Calibration</button>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+            <div id="stereoCalibrationPanel" class="calibration-menu-panel expandable-panel collapsed">
+                <div class="panel-header" onclick="togglePanel(event)">
+                    <h2>Calibration Menu</h2>
+                    <span class="expand-arrow">▼</span>
+                </div>
+                <div class="calibration-buttons flex-content-row">
+                    <button id="capture-calibration" onclick="captureCalibrationFrame('0')">Capture Calibration Frame</button>
+                    <button id="accept-frame" onclick="acceptCalibrationFrame('0')">Accept Calibration Frame</button>
+                    <button id="reject-frame" onclick="rejectCalibrationFrame('0')">Reject Calibration Frame</button>
+                    <button id="run-calibration" onclick="runDistortionCalibration('0')">Run Distortion Calibration</button>   
+                    <button id="save-calibration" onclick="saveCalibration('0')">Save Calibration</button>
                 </div>
             </div>
         </div>

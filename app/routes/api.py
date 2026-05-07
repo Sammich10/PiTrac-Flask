@@ -46,15 +46,15 @@ def build_system_command(params):
         cmd.command_id = CommandID.Calibrate
         # Extract the camera_id parameter
         msg_params = {}
+        msg_params["task_name"] = TaskNames.FLIGHT_PROCESSOR.value
         # Find the camera ID parameter, optional
         if "camera_id" in params:
             camera_id = params.get("camera_id")
-            if camera_id == "Tee":
-                msg_params["task_name"] = TaskNames.TEE_AGENT.value
-            elif camera_id == "Flight":
-                msg_params["task_name"] = TaskNames.FLIGHT_AGENT.value
-            else:
-                raise ValueError(f"Unknown camera_id: {camera_id}")
+            msg_params["camera_index"] = camera_id
+            # Remove camera_id from params to avoid confusion
+            params.pop("camera_id")
+        else: 
+            raise ValueError("Missing 'camera_id' parameter for Calibrate command")
         # Find the calibration action command(s), ensure it exists
         for(key, value) in params.items():
             if key == "action":
@@ -71,16 +71,12 @@ def build_system_command(params):
         cmd.command_id = CommandID.Configure
         # For configure, we can pass any parameters directly
         msg_params = {}
+        msg_params["task_name"] = TaskNames.FLIGHT_PROCESSOR.value  # Default to flight processor if not specified
         if "camera_id" not in params:
             raise ValueError("Missing 'camera_id' parameter for Configure command")
         else:
             camera_id = params.get("camera_id")
-            if camera_id == "Tee":
-                msg_params["task_name"] = TaskNames.TEE_AGENT.value
-            elif camera_id == "Flight":
-                msg_params["task_name"] = TaskNames.FLIGHT_AGENT.value
-            else:
-                raise ValueError(f"Unknown camera_id: {camera_id}")
+            msg_params["camera_index"] = camera_id
             # Remove camera_id from params to avoid confusion
             params.pop("camera_id")
         # Add any other parameters to the command params
