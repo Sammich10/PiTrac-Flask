@@ -1,0 +1,30 @@
+<!-- Control Panel for connecting, changing Pi Mode, etc -->
+<head>
+    <link rel="stylesheet" type="text/css" href="/static/styles/components/control_panel.css">
+    <link rel="stylesheet" type="text/css" href="/static/styles/components/shared.css">
+    <script src="/static/js/components/control_panel.js"></script>
+</head>
+<div id="control-panel-container" class="flex-content-column">
+    <div id="control-panel" class="flex-content-row">
+        <!--Connect Button-->
+        <div id="connect-container" class="flex-content-column">
+            <button id="connect-button" onclick="connectPiTrac()">Connect to PiTrac</button>
+        </div>
+        <!--Dropdown for mode selection-->
+        <div id="mode-control-container" class="flex-content-row">
+            <select id="mode-select">
+                <option value="EnterStandby">Standby</option>
+                <option value="EnterCalibration">Calibration</option>
+                <option value="EnterLaunchMonitor">Launch Monitor</option>
+                <option value="EnterDiagnostic">Diagnostics</option>
+            </select>
+            <button onclick="changeMode()">Change Mode</button>
+            <p id="change-mode-result"></p>
+        </div>
+        <!--Status Section-->
+        <div id="status-container" class="flex-content-row">
+            <button onclick="getStatus()">Get Status</button>
+            <pre id="statusResult"></pre>
+        </div>
+    </div>
+</div>

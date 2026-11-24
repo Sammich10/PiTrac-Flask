@@ -3,7 +3,7 @@ from flask import (
     redirect, url_for, session, current_app
 )
 from app.messages.message_types import MessageType
-from app.messages.external.SystemCommandMsg import SystemCommandMsg, CommandID
+from app.messages.external.SystemCommandMsg import *
 from app.messages.common.AckMessage import AckMessage
 from app.config.task_names import TaskNames
 
@@ -16,85 +16,47 @@ def get_pitrac():
 
 def build_system_command(params):
     """Helper to build a SystemCommandMsg"""
-    
-    cmd = SystemCommandMsg()
-    
-    if not params or "command_id" not in params:
-        raise ValueError("Missing 'command_id' in parameters")
-    
-    command_id = params.get("command_id")
-    
-    if command_id == "calibrate":
-        command_id = CommandID.Calibrate
-    elif command_id == "set_mode":
-        command_id = CommandID.SetMode
-    elif command_id == "configure":
-        command_id = CommandID.Configure
+    if not isinstance(params, dict):
+        raise ValueError("Parameters must be a dictionary")
+    # Initialize the system command message object
+    cmdMsg = SystemCommandMsg()
+    # Validate and extract the command ID from the parameters
+    cmdId = CommandID.get_value(params.get('commandID', -1))
+    if cmdId == -1:
+        raise ValueError(f"Unknown command_id: {params.get('commandID')}")
     else:
-        raise ValueError(f"Unknown command_id: {command_id}")
+        params.pop('commandID')
     
-    if command_id == CommandID.SetMode:
-        # Set the message ID
-        cmd.command_id = CommandID.SetMode
-        # Extract mode parameter, ensure it exists
-        if "mode" not in params:
-            raise ValueError("Missing 'mode' parameter for SetMode command")
-        # Set command parameters
-        cmd.command_params = {"mode": params.get("mode")}
-        return cmd
-    elif command_id == CommandID.Calibrate:
-        cmd.command_id = CommandID.Calibrate
-        # Extract the camera_id parameter
-        msg_params = {}
-        msg_params["task_name"] = TaskNames.FLIGHT_PROCESSOR.value
-        # Find the camera ID parameter, optional
-        if "camera_id" in params:
-            camera_id = params.get("camera_id")
-            msg_params["camera_index"] = camera_id
-            # Remove camera_id from params to avoid confusion
-            params.pop("camera_id")
-        else: 
-            raise ValueError("Missing 'camera_id' parameter for Calibrate command")
-        # Find the calibration action command(s), ensure it exists
-        for(key, value) in params.items():
-            if key == "action":
-                msg_params["action"] = value
-            # Right now no other parameters are supported for calibration
-            # In the future we will hopefully support configuring other
-            # calibration parameters like chessboard size, calibration model, etc.
-            else:
-                pass
-        
-        cmd.set_command_params(msg_params)
-        return cmd
-    elif command_id == CommandID.Configure:
-        cmd.command_id = CommandID.Configure
-        # For configure, we can pass any parameters directly
-        msg_params = {}
-        msg_params["task_name"] = TaskNames.FLIGHT_PROCESSOR.value  # Default to flight processor if not specified
-        if "camera_id" not in params:
-            raise ValueError("Missing 'camera_id' parameter for Configure command")
+    # Handle specific command types based on the command ID
+    if cmdId == CommandID.SetMode:
+        # Get set mode action parameter
+        action = SetModeAction.get_value(params.get("action"))
+        if action == -1:
+            raise ValueError(f"Unknown set mode action: {params.get('action', -1)}")
         else:
-            camera_id = params.get("camera_id")
-            msg_params["camera_index"] = camera_id
-            # Remove camera_id from params to avoid confusion
-            params.pop("camera_id")
-        # Add any other parameters to the command params
-        for key, value in params.items():
-            # If the value is a number, convert it to a string since command_params expects string values. If it's already a string, keep it as is. If it's something else (like a dict), we can convert it to JSON string.
-            if isinstance(value, (int, float, bool)):
-                # Convert numbers to strings, but keep booleans as strings "true"/"false"
-                if isinstance(value, bool):
-                    value = "true" if value else "false"
-                else:
-                    value = str(value)
-            elif not isinstance(value, str):
-                value = json.dumps(value)
-            msg_params[key] = value        
-        cmd.set_command_params(msg_params)
-        return cmd
+            params.pop("action")
+    elif cmdId == CommandID.Calibrate:
+        # Get calibration action parameter
+        action = CalibrationAction.get_value(params.get("action", -1))
+        if action == -1:
+            raise ValueError(f"Unknown calibration action: {params.get('action', -1)}")
+        else:
+            params.pop("action")
+    elif cmdId == CommandID.Configure:
+        # Get configuration action parameter
+        action = ConfigurationAction.get_value(params.get("action", -1))
+        if action == -1:
+            raise ValueError(f"Unknown configuration action: {params.get('action', -1)}")
+        else:
+            params.pop("action")
+    else:
+        raise ValueError(f"Unsupported Command ID: {cmdId}")
 
-    raise ValueError(f"Unsupported command_id: {command_id}")
+    # Build the command message
+    cmdMsg.CommandID = cmdId
+    cmdMsg.Action = action
+    cmdMsg.CommandParams = {k: str(v) for k, v in params.items()}
+    return cmdMsg
 
 
 @bp.route("/connect", methods=["POST"])
@@ -114,7 +76,7 @@ def connect():
 def get_status():
     """Get PiTrac connection status"""
     pitrac = get_pitrac()
-    
+    print("Getting PiTrac status...")
     try:
         # Simple check if socket is connected
         connected = pitrac.socket is not None
@@ -124,6 +86,7 @@ def get_status():
             'port': pitrac.port
         })
     except Exception as e:
+        print(f"Error getting status: {e}")
         return jsonify({
             'connected': False,
             'error': str(e)
@@ -149,12 +112,12 @@ def change_mode():
     
     try:
         # Create command
-        cmd = SystemCommandMsg()
-        cmd.command_id = CommandID.SetMode
-        cmd.command_params = {"mode": new_mode}
+        cmdMsg = SystemCommandMsg()
+        cmdMsg.command_id = CommandID.SetMode
+        cmdMsg.command_params = {"mode": new_mode}
         
         # Send and receive response (synchronous request-reply)
-        response = pitrac.send_and_receive(cmd, timeout_ms=3000)
+        response = pitrac.send_and_receive(cmdMsg, timeout_ms=3000)
         
         if response:
             return jsonify({

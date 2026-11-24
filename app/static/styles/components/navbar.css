@@ -1,0 +1,33 @@
+
+#navbar-container {
+    background-color: var(--primary-bg-color);
+    overflow: hidden;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    height: 2.8vh;
+}
+
+#navbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+#navbar a {
+    float: left;
+    display: flex;
+    justify-self: center;
+    text-align: center;
+    color: var(--text-color);
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 2vh;
+}
+
+#navbar a:hover {
+    background-color: var(--hover-bg-color);
+    color: var(--text-color-dark);
+}

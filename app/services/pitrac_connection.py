@@ -24,6 +24,7 @@ class PiTracConnection:
         # Configuration
         self._config = config or {}
         self.hostname = self._config.get('hostname') or self._config.get('IP', 'localhost')
+        self.ip = self._config.get('IP', 'localhost')
         self.port = self._config.get('port', 8080)
         self.stream_port = self._config.get('stream_port', 8081)
         
@@ -85,7 +86,7 @@ class PiTracConnection:
         
         try:
             self.framesocket = self.context.socket(zmq.SUB)
-            endpoint = f"tcp://*:{self.port+1}"
+            endpoint = f"tcp://*:{self.stream_port}"
             self.framesocket.bind(endpoint)
             self.framesocket.setsockopt_string(zmq.SUBSCRIBE, "")
             

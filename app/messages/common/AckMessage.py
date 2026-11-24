@@ -47,6 +47,26 @@ class AckStatus:
             
         }
         return mapping.get(value, f"Unknown({value})")
+        
+    @classmethod
+    def get_value(cls, name: str) -> int:
+        """Get enum value from name"""
+        mapping = {
+            
+            "Success": 0,
+            
+            "Failure": 1,
+            
+            "Invalid": 2,
+            
+            "Timeout": 3,
+            
+            "Retry": 4,
+            
+            "Partial": 5,
+            
+        }
+        return mapping.get(name, -1)
 
 
 

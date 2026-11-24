@@ -3,52 +3,18 @@
 <head>
     <title>PiTrac Web UI</title>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="/static/styles/home.css">
+    <link rel="stylesheet" type="text/css" href="/static/styles/calibration.css">
+    <link rel="stylesheet" type="text/css" href="/static/styles/components/shared.css">
+    <script src="/static/js/calibration.js"></script>
 </head>
 <body>
-    <!-- Navbar -->
-    <div id="navbar-container">    
-        <nav id="navbar">
-            <a href="/">Home</a> |
-            <a href="/settings">Settings</a> | 
-            <a href="/about">About</a>
-        </nav>
-    </div>
-    <!-- Control Panel for connecting, changing Pi Mode, etc -->
-    <div id="control-panel-container" class="panel-section flex-content-column">
-        <h1 class="panel-title">PiTrac Control Panel</h1>
-        <div id="control-panel" class="flex-content-row">
-            <!--Connect Button-->
-            <div id="connect-container" class="panel-content flex-content-column">
-                <h1>Connect to PiTrac</h1>
-                <button onclick="connectPiTrac()">Connect to PiTrac</button>
-                <p id="connectResult"></p>
-            </div>
-            <!--Dropdown for mode selection-->
-            <div id="mode-control-container" class="panel-content flex-content-column">
-                <h1>Change PiTrac Mode</h1>
-                <select id="modeSelect">
-                    <option value="standby">Standby</option>
-                    <option value="calibration">Calibration</option>
-                    <option value="launch_monitor">Launch Monitor</option>
-                    <option value="diagnostics">Diagnostics</option>
-                </select>
-                <button onclick="changeMode()">Change Mode</button>
-                <p id="result"></p>
-            </div>
-            <div id="status-container" class="panel-content flex-content-column">
-                <h1>PiTrac Status</h1>
-                <button onclick="getStatus()">Get Status</button>
-                <pre id="statusResult"></pre>
-            </div>
-        </div>
-    </div>
+    {% include 'app/components/navbar.html' %}
+    {% include 'app/components/control_panel.html' %}
     <!-- Viewfinder/Calibration Panel -->
-    <div id="viewfinder-panel" class="panel-section expandable-panel collapsed">
-        <div class="panel-header" onclick="togglePanel(event)">
-            <h1>Viewfinder/Calibration</h1>
-            <span class="expand-arrow">▼</span>
-        </div>
+    <div id="viewfinder-panel" class="panel-section">
+        <h1>
+            Viewfinder/Calibration
+        </h1>
         <div>
             <div class="camera-container">
                 <div class="camera-display">
@@ -175,12 +141,6 @@
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Launch Monitor Panel -->
-    <div id="launch-monitor-panel" class="panel-section">
-        <h1>Launch Monitor Data</h1>
-        <button onclick="getLaunchData()">Get Launch Data</button>
-        <pre id="launchDataResult"></pre>
     </div>
     <script src="/static/js/api.js"></script>
 </body>

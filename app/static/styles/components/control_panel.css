@@ -1,0 +1,51 @@
+#control-panel-container {
+    background-color: var(--primary-bg-color);
+    padding: 0.8vh 0 1.2vh 0;
+}
+
+#control-panel {
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#control-panel div{
+    padding: 0 0.8vh;
+}
+
+#connect-container {
+    justify-content: center;
+    align-items: center;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transition: all 0.3s ease;
+}
+
+button:active {
+    background-color: #004080;
+    transition: all 0.3s ease;
+}
+
+#mode-control-container {
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+#mode-control-container select {
+    padding: 5px;
+    font-size: 16px;
+}

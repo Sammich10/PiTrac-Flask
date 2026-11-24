@@ -39,6 +39,181 @@ class CommandID:
             
         }
         return mapping.get(value, f"Unknown({value})")
+        
+    @classmethod
+    def get_value(cls, name: str) -> int:
+        """Get enum value from name"""
+        mapping = {
+            
+            "SetMode": 0,
+            
+            "Calibrate": 1,
+            
+            "Configure": 2,
+            
+            "GetData": 3,
+            
+        }
+        return mapping.get(name, -1)
+
+
+class SetModeAction:
+    """Available set mode actions"""
+    
+    EnterStandby = 0
+    
+    EnterCalibration = 1
+    
+    EnterLaunchMonitorMode = 2
+    
+    EnterDiagnosticMode = 3
+    
+    
+    @classmethod
+    def get_name(cls, value: int) -> str:
+        """Get enum name from value"""
+        mapping = {
+            
+            0: "EnterStandby",
+            
+            1: "EnterCalibration",
+            
+            2: "EnterLaunchMonitorMode",
+            
+            3: "EnterDiagnosticMode",
+            
+        }
+        return mapping.get(value, f"Unknown({value})")
+        
+    @classmethod
+    def get_value(cls, name: str) -> int:
+        """Get enum value from name"""
+        mapping = {
+            
+            "EnterStandby": 0,
+            
+            "EnterCalibration": 1,
+            
+            "EnterLaunchMonitorMode": 2,
+            
+            "EnterDiagnosticMode": 3,
+            
+        }
+        return mapping.get(name, -1)
+
+
+class CalibrationAction:
+    """Available calibration actions"""
+    
+    SelectModel = 0
+    
+    SetBoardDimensions = 1
+    
+    CaptureFrame = 2
+    
+    AcceptFrame = 3
+    
+    RejectFrame = 4
+    
+    PerformDistortionCalibration = 5
+    
+    PerformStereoCalibration = 6
+    
+    
+    @classmethod
+    def get_name(cls, value: int) -> str:
+        """Get enum name from value"""
+        mapping = {
+            
+            0: "SelectModel",
+            
+            1: "SetBoardDimensions",
+            
+            2: "CaptureFrame",
+            
+            3: "AcceptFrame",
+            
+            4: "RejectFrame",
+            
+            5: "PerformDistortionCalibration",
+            
+            6: "PerformStereoCalibration",
+            
+        }
+        return mapping.get(value, f"Unknown({value})")
+        
+    @classmethod
+    def get_value(cls, name: str) -> int:
+        """Get enum value from name"""
+        mapping = {
+            
+            "SelectModel": 0,
+            
+            "SetBoardDimensions": 1,
+            
+            "CaptureFrame": 2,
+            
+            "AcceptFrame": 3,
+            
+            "RejectFrame": 4,
+            
+            "PerformDistortionCalibration": 5,
+            
+            "PerformStereoCalibration": 6,
+            
+        }
+        return mapping.get(name, -1)
+
+
+class ConfigurationAction:
+    """Available configuration actions"""
+    
+    SetExposure = 0
+    
+    SetGain = 1
+    
+    SetFOV = 2
+    
+    SetCameraParams = 3
+    
+    ToggleViewfinder = 4
+    
+    
+    @classmethod
+    def get_name(cls, value: int) -> str:
+        """Get enum name from value"""
+        mapping = {
+            
+            0: "SetExposure",
+            
+            1: "SetGain",
+            
+            2: "SetFOV",
+            
+            3: "SetCameraParams",
+            
+            4: "ToggleViewfinder",
+            
+        }
+        return mapping.get(value, f"Unknown({value})")
+        
+    @classmethod
+    def get_value(cls, name: str) -> int:
+        """Get enum value from name"""
+        mapping = {
+            
+            "SetExposure": 0,
+            
+            "SetGain": 1,
+            
+            "SetFOV": 2,
+            
+            "SetCameraParams": 3,
+            
+            "ToggleViewfinder": 4,
+            
+        }
+        return mapping.get(name, -1)
 
 
 
@@ -48,9 +223,11 @@ class SystemCommandMsg(MessageBase):
     
     # Fields
     
-    command_id: int = 0  # Command identifier (0=SetMode, 1=Calibrate, 2=Configure)
+    CommandID: int = 0  # Command identifier (0=SetMode, 1=Calibrate, 2=Configure)
     
-    command_params: Dict[str, str] = field(default_factory=dict)  # Additional command parameters for future extensibility
+    Action: int = 0  # Action identifier corresponding to the command (e.g., CalibrationAction or ConfigurationAction)
+    
+    CommandParams: Dict[str, str] = field(default_factory=dict)  # Additional command parameters for future extensibility
     
     
     def __post_init__(self):
@@ -65,21 +242,25 @@ class SystemCommandMsg(MessageBase):
         """Get field values as list for serialization (matching C++ field order)"""
         return [
             
-            self.command_id,
+            self.CommandID,
             
-            self.command_params,
+            self.Action,
+            
+            self.CommandParams,
             
         ]
     
     def _set_fields_data(self, fields_data: List[Any]) -> None:
         """Set field values from list during deserialization"""
-        if len(fields_data) != 2:
-            raise ValueError(f"Expected 2 fields, got {len(fields_data)}")
+        if len(fields_data) != 3:
+            raise ValueError(f"Expected 3 fields, got {len(fields_data)}")
         
         
-        self.command_id = fields_data[0]
+        self.CommandID = fields_data[0]
         
-        self.command_params = fields_data[1]
+        self.Action = fields_data[1]
+        
+        self.CommandParams = fields_data[2]
         
     
     @classmethod
@@ -87,14 +268,19 @@ class SystemCommandMsg(MessageBase):
         """Create instance from dictionary"""
         kwargs = {}
         
-        if 'command_id' in data:
+        if 'CommandID' in data:
             
-            kwargs['command_id'] = data['command_id']
+            kwargs['CommandID'] = data['CommandID']
             
         
-        if 'command_params' in data:
+        if 'Action' in data:
             
-            kwargs['command_params'] = data['command_params']
+            kwargs['Action'] = data['Action']
+            
+        
+        if 'CommandParams' in data:
+            
+            kwargs['CommandParams'] = data['CommandParams']
             
         
         return cls(**kwargs)
@@ -104,33 +290,46 @@ class SystemCommandMsg(MessageBase):
         result = {}
         
         
-        result['command_id'] = self.command_id
+        result['CommandID'] = self.CommandID
         
         
         
-        result['command_params'] = self.command_params
+        result['Action'] = self.Action
+        
+        
+        
+        result['CommandParams'] = self.CommandParams
         
         
         return result
     
     # Field accessors (mirroring C++ style)
     
-    def get_command_id(self) -> int:
-        """Get command_id"""
-        return self.command_id
+    def get_CommandID(self) -> int:
+        """Get CommandID"""
+        return self.CommandID
     
-    def set_command_id(self, value: int) -> None:
-        """Set command_id"""
-        self.command_id = value
+    def set_CommandID(self, value: int) -> None:
+        """Set CommandID"""
+        self.CommandID = value
     
     
-    def get_command_params(self) -> Dict[str, str]:
-        """Get command_params"""
-        return self.command_params
+    def get_Action(self) -> int:
+        """Get Action"""
+        return self.Action
     
-    def set_command_params(self, value: Dict[str, str]) -> None:
-        """Set command_params"""
-        self.command_params = value
+    def set_Action(self, value: int) -> None:
+        """Set Action"""
+        self.Action = value
+    
+    
+    def get_CommandParams(self) -> Dict[str, str]:
+        """Get CommandParams"""
+        return self.CommandParams
+    
+    def set_CommandParams(self, value: Dict[str, str]) -> None:
+        """Set CommandParams"""
+        self.CommandParams = value
     
     
     

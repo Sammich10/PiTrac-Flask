@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Blueprint, Response
+from flask import Flask, redirect, render_template, Blueprint, Response, url_for
 import time
 import os
 import logging
@@ -8,7 +8,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def create_app():
     """Create and configure Flask application"""
-    from .routes import viewfinder, api, stream
+    from .routes import viewfinder, api, stream, pages
     from .services.pitrac_connection import PiTracConnection
     
     app = Flask(__name__)
@@ -48,10 +48,11 @@ def create_app():
     app.register_blueprint(viewfinder.bp)
     app.register_blueprint(api.bp)
     app.register_blueprint(stream.bp)
+    app.register_blueprint(pages.bp)
     
     @app.route("/")
     def index():
-        return render_template("app/home.html")
+        return redirect(url_for('pages.home'))
     
     # Cleanup on shutdown
     # @app.teardown_appcontext
